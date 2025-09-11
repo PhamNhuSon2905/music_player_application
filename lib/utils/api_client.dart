@@ -84,33 +84,50 @@ class ApiClient {
     return response;
   }
 
-  Future<void> _handleUnauthorized(http.Response response) async {
-    if (response.statusCode == 401) {
-      final body = response.body;
-      if (body.contains('JWT expired') || body.contains('Invalid JWT') || body.contains('Full authentication is required')) {
-        print('[ApiClient] ❌ Token expired or invalid – Logging out...');
-        await AuthService.logout(context);
-      } else {
-        print('[ApiClient] ⚠️ 401 but not JWT-related, no logout');
-      }
-    }
+  /// ✅ NEW: DELETE request
+  Future<http.Response> delete(String path, {Map<String, String>? headers}) async {
+    final uri = Uri.parse('$baseUrl$path');
+    final allHeaders = await _getHeaders(extraHeaders: headers);
+
+    print('[DELETE] $uri');
+    print('[DELETE] Headers: $allHeaders');
+
+    final response = await http.delete(uri, headers: allHeaders);
+
+    print('[DELETE] Status: ${response.statusCode}');
+    print('[DELETE] Body: ${response.body}');
+
+    await _handleUnauthorized(response);
+    return response;
   }
 
-
-  Future<http.Response> uploadFile(String path, File file) async {
+  /// ✅ NEW: Upload file (optional file + fields)
+  Future<http.Response> uploadFile(
+      String path, {
+        File? file,
+        Map<String, String>? fields,
+      }) async {
     final uri = Uri.parse('$baseUrl$path');
     final token = await TokenStorage.getToken();
 
     print('[UPLOAD] $uri');
-    print('[UPLOAD] File: ${file.path}');
+    if (file != null) print('[UPLOAD] File: ${file.path}');
     print('[UPLOAD] Token: $token');
+    print('[UPLOAD] Fields: $fields');
 
     final request = http.MultipartRequest('POST', uri)
       ..headers.addAll({
-        'Authorization': 'Bearer $token',
+        if (token != null) 'Authorization': 'Bearer $token',
         'Accept': 'application/json',
-      })
-      ..files.add(await http.MultipartFile.fromPath('file', file.path));
+      });
+
+    if (fields != null) {
+      request.fields.addAll(fields);
+    }
+
+    if (file != null) {
+      request.files.add(await http.MultipartFile.fromPath('file', file.path));
+    }
 
     final streamedResponse = await request.send();
     final response = await http.Response.fromStream(streamedResponse);
@@ -120,5 +137,19 @@ class ApiClient {
 
     await _handleUnauthorized(response);
     return response;
+  }
+
+  Future<void> _handleUnauthorized(http.Response response) async {
+    if (response.statusCode == 401) {
+      final body = response.body;
+      if (body.contains('JWT expired') ||
+          body.contains('Invalid JWT') ||
+          body.contains('Full authentication is required')) {
+        print('[ApiClient] ❌ Token expired or invalid – Logging out...');
+        await AuthService.logout(context);
+      } else {
+        print('[ApiClient] ⚠️ 401 but not JWT-related, no logout');
+      }
+    }
   }
 }

@@ -31,7 +31,11 @@ class UserService {
       final mimeType = lookupMimeType(imageFile.path);
       final ext = imageFile.path.split('.').last.toLowerCase();
 
-      final response = await _client.uploadFile('/api/user/avatar', imageFile);
+      final response = await _client.uploadFile(
+        '/api/user/avatar',
+        file: imageFile, // nếu ApiClient mới
+      );
+
 
       if (response.statusCode == 200) {
         // Thành công
