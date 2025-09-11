@@ -111,22 +111,29 @@ class _RegisterPageState extends State<RegisterPage> {
       SnackBar(
         content: Row(
           children: [
-            Icon(success ? Icons.check_circle : Icons.error,
-                color: success ? Colors.green : Colors.red),
+            Icon(
+              success ? Icons.check_circle : Icons.error,
+              color: Colors.white,
+            ),
             const SizedBox(width: 8),
-            Expanded(child: Text(message)),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(color: Colors.white),
+              ),
+            ),
           ],
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: success ? Colors.green : Colors.red,
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 3),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: success ? Colors.green : Colors.red, width: 1),
         ),
       ),
     );
   }
+
 
   InputDecoration _inputDecoration(String label, IconData icon) {
     return InputDecoration(
