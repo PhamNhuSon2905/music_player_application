@@ -55,17 +55,22 @@ class _MusicHomePageState extends State<MusicHomePage> {
           activeColor: Colors.deepPurple,
           inactiveColor: Colors.grey,
           items: const [
-            BottomNavigationBarItem(icon: Icon(CupertinoIcons.music_house_fill), label: 'Cá Nhân'),
+            BottomNavigationBarItem(icon: Icon(CupertinoIcons.music_house_fill), label: 'Thư Viện'),
             BottomNavigationBarItem(icon: Icon(CupertinoIcons.compass_fill), label: 'Khám Phá'),
-            BottomNavigationBarItem(icon: Icon(CupertinoIcons.person_fill), label: 'Tài khoản'),
+            BottomNavigationBarItem(icon: Icon(CupertinoIcons.person_fill), label: 'Cá Nhân'),
             BottomNavigationBarItem(icon: Icon(CupertinoIcons.settings_solid), label: 'Cài Đặt'),
           ],
         ),
         tabBuilder: (BuildContext context, int index) {
-          // Mỗi tab sẽ được bọc trong CupertinoPageScaffold để có navigation bar riêng
           return CupertinoPageScaffold(
             navigationBar: CupertinoNavigationBar(
-              middle: const Text('Zing MP3 Clone', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)),
+              middle: const Text('Zing MP3 Music',
+                style: TextStyle(
+                  fontFamily: 'SF Pro',
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               backgroundColor: Colors.white,
               border: null, // Bỏ đường viền dưới
             ),

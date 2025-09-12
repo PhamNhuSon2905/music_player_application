@@ -1,8 +1,10 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:music_player_application/data/model/genre.dart';
+import 'package:music_player_application/data/model/playlist.dart';
 import 'package:music_player_application/data/repository/genre_repository.dart';
+import 'package:music_player_application/data/repository/playlist_repository.dart';
+import 'package:music_player_application/service/token_storage.dart';
 import 'favorite_songs_page.dart';
 import 'genre_card.dart';
 import 'genre_view_model.dart';
@@ -16,7 +18,11 @@ class DiscoveryTab extends StatefulWidget {
 
 class _DiscoveryTabState extends State<DiscoveryTab> {
   List<Genre> genres = [];
-  bool isLoading = true;
+  List<Playlist> playlists = [];
+  String? username;
+
+  bool isLoadingGenres = true;
+  bool isLoadingPlaylists = true;
 
   final PageController _pageController = PageController();
   final List<String> bannerImages = [
@@ -31,6 +37,8 @@ class _DiscoveryTabState extends State<DiscoveryTab> {
   void initState() {
     super.initState();
     _loadGenres();
+    _loadPlaylists();
+    _loadUserName();
     _startAutoSlide();
   }
 
@@ -62,7 +70,33 @@ class _DiscoveryTabState extends State<DiscoveryTab> {
     final data = await repo.fetchAllGenres();
     setState(() {
       genres = data;
-      isLoading = false;
+      isLoadingGenres = false;
+    });
+  }
+
+  Future<void> _loadPlaylists() async {
+    final userId = await TokenStorage.getUserId();
+    final repo = PlaylistRepository(context);
+
+    try {
+      final data = await repo.fetchPlaylistsByUser(userId);
+      setState(() {
+        playlists = data;
+        isLoadingPlaylists = false;
+      });
+    } catch (e) {
+      debugPrint("Lỗi load playlist: $e");
+      setState(() {
+        playlists = [];
+        isLoadingPlaylists = false;
+      });
+    }
+  }
+
+  Future<void> _loadUserName() async {
+    final name = await TokenStorage.getUsername();
+    setState(() {
+      username = name ?? "";
     });
   }
 
@@ -72,11 +106,11 @@ class _DiscoveryTabState extends State<DiscoveryTab> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text(
-          'Khám phá',
+          'Khám phá âm nhạc',
           style: TextStyle(
             fontFamily: 'SF Pro',
             fontWeight: FontWeight.bold,
-            fontSize: 20,
+            fontSize: 18,
           ),
         ),
         centerTitle: true,
@@ -86,8 +120,9 @@ class _DiscoveryTabState extends State<DiscoveryTab> {
       ),
       body: ListView(
         children: [
+          // Banner
           SizedBox(
-            height: 150,
+            height: 120,
             child: PageView.builder(
               controller: _pageController,
               itemCount: bannerImages.length,
@@ -107,7 +142,7 @@ class _DiscoveryTabState extends State<DiscoveryTab> {
             ),
           ),
 
-          // ✅ Chủ đề & Thể loại nhạc
+          // Chủ đề & Thể loại nhạc
           const Padding(
             padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
             child: Text(
@@ -119,7 +154,7 @@ class _DiscoveryTabState extends State<DiscoveryTab> {
               ),
             ),
           ),
-          if (isLoading)
+          if (isLoadingGenres)
             const Center(
               child: Padding(
                 padding: EdgeInsets.symmetric(vertical: 20),
@@ -128,7 +163,7 @@ class _DiscoveryTabState extends State<DiscoveryTab> {
             )
           else
             SizedBox(
-              height: 150,
+              height: 120,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -149,6 +184,19 @@ class _DiscoveryTabState extends State<DiscoveryTab> {
                 },
               ),
             ),
+
+          //  Bài hát yêu thích
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 24, 16, 8),
+            child: Text(
+              'Bài hát yêu thích của bạn',
+              style: TextStyle(
+                fontFamily: 'SF Pro',
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: GestureDetector(
@@ -175,7 +223,125 @@ class _DiscoveryTabState extends State<DiscoveryTab> {
             ),
           ),
 
-          //  Mới phát hành
+          // Playlist của bạn
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 24, 16, 8),
+            child: Text(
+              'Playlist của bạn',
+              style: TextStyle(
+                fontFamily: 'SF Pro',
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          isLoadingPlaylists
+              ? const Center(child: CircularProgressIndicator())
+              : ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: playlists.length + 1,
+            itemBuilder: (context, index) {
+              if (index == 0) {
+                //  Nút thêm playlist
+                return GestureDetector(
+                  onTap: () {
+                    // TODO: mở form tạo playlist
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Row(
+                      children: [
+                        Container(
+                          height: 60,
+                          width: 60,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[200],
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Center(
+                            child: CircleAvatar(
+                              radius: 10,
+                              backgroundColor: Colors.white,
+                              child: Icon(Icons.add,
+                                  size: 20, color: Colors.grey),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Text(
+                          "Tạo playlist",
+                          style: TextStyle(
+                            fontFamily: 'SF Pro',
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+
+              final playlist = playlists[index - 1];
+              return GestureDetector(
+                onTap: () {
+                  // TODO: mở màn chi tiết playlist
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Row(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: playlist.fullImageUrl.startsWith('http')
+                            ? Image.network(
+                          playlist.fullImageUrl,
+                          width: 60,
+                          height: 60,
+                          fit: BoxFit.cover,
+                        )
+                            : Image.asset(
+                          playlist.fullImageUrl,
+                          width: 60,
+                          height: 60,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              playlist.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontFamily: 'SF Pro',
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            Text(
+                              username ?? "", // in username
+                              style: const TextStyle(
+                                fontFamily: 'SF Pro',
+                                fontSize: 13,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+
+          // Mới phát hành
           const Padding(
             padding: EdgeInsets.fromLTRB(16, 24, 16, 8),
             child: Text(
@@ -188,7 +354,7 @@ class _DiscoveryTabState extends State<DiscoveryTab> {
             ),
           ),
           const SizedBox(
-            height: 200,
+            height: 120,
             child: Center(
               child: Text(
                 'Coming soon...',
