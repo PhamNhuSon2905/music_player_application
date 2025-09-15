@@ -50,7 +50,7 @@ class Playlist {
     };
   }
 
- 
+
   String get fullImageUrl {
     if (image.isEmpty) return 'assets/default_playlist.png';
     return image;

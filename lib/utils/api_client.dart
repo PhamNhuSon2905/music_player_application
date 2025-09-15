@@ -12,7 +12,9 @@ class ApiClient {
 
   ApiClient(this.context);
 
-  Future<Map<String, String>> _getHeaders({Map<String, String>? extraHeaders}) async {
+  Future<Map<String, String>> _getHeaders({
+    Map<String, String>? extraHeaders,
+  }) async {
     final token = await TokenStorage.getToken();
     print('[ApiClient] Token: $token');
 
@@ -40,8 +42,11 @@ class ApiClient {
     return response;
   }
 
-  Future<http.Response> post(String path,
-      {Map<String, dynamic>? body, Map<String, String>? headers}) async {
+  Future<http.Response> post(
+      String path, {
+        Map<String, dynamic>? body,
+        Map<String, String>? headers,
+      }) async {
     final uri = Uri.parse('$baseUrl$path');
     final allHeaders = await _getHeaders(extraHeaders: headers);
 
@@ -62,8 +67,11 @@ class ApiClient {
     return response;
   }
 
-  Future<http.Response> put(String path,
-      {Map<String, dynamic>? body, Map<String, String>? headers}) async {
+  Future<http.Response> put(
+      String path, {
+        Map<String, dynamic>? body,
+        Map<String, String>? headers,
+      }) async {
     final uri = Uri.parse('$baseUrl$path');
     final allHeaders = await _getHeaders(extraHeaders: headers);
 
@@ -84,8 +92,11 @@ class ApiClient {
     return response;
   }
 
-  /// ✅ NEW: DELETE request
-  Future<http.Response> delete(String path, {Map<String, String>? headers}) async {
+  /// DELETE request
+  Future<http.Response> delete(
+      String path, {
+        Map<String, String>? headers,
+      }) async {
     final uri = Uri.parse('$baseUrl$path');
     final allHeaders = await _getHeaders(extraHeaders: headers);
 
@@ -101,21 +112,23 @@ class ApiClient {
     return response;
   }
 
-  /// ✅ NEW: Upload file (optional file + fields)
+  // Upload file (POST hoặc PUT)
   Future<http.Response> uploadFile(
       String path, {
         File? file,
         Map<String, String>? fields,
+        String fileField = "file",
+        String method = "POST", // thêm tham số method, mặc định POST
       }) async {
     final uri = Uri.parse('$baseUrl$path');
     final token = await TokenStorage.getToken();
 
-    print('[UPLOAD] $uri');
-    if (file != null) print('[UPLOAD] File: ${file.path}');
-    print('[UPLOAD] Token: $token');
-    print('[UPLOAD] Fields: $fields');
+    print('[UPLOAD $method] $uri');
+    if (file != null) print('[UPLOAD $method] File: ${file.path}');
+    print('[UPLOAD $method] Token: $token');
+    print('[UPLOAD $method] Fields: $fields');
 
-    final request = http.MultipartRequest('POST', uri)
+    final request = http.MultipartRequest(method, uri)  // sử dụng method
       ..headers.addAll({
         if (token != null) 'Authorization': 'Bearer $token',
         'Accept': 'application/json',
@@ -126,18 +139,21 @@ class ApiClient {
     }
 
     if (file != null) {
-      request.files.add(await http.MultipartFile.fromPath('file', file.path));
+      request.files.add(
+        await http.MultipartFile.fromPath(fileField, file.path),
+      );
     }
 
     final streamedResponse = await request.send();
     final response = await http.Response.fromStream(streamedResponse);
 
-    print('[UPLOAD] Status: ${response.statusCode}');
-    print('[UPLOAD] Body: ${response.body}');
+    print('[UPLOAD $method] Status: ${response.statusCode}');
+    print('[UPLOAD $method] Body: ${response.body}');
 
     await _handleUnauthorized(response);
     return response;
   }
+
 
   Future<void> _handleUnauthorized(http.Response response) async {
     if (response.statusCode == 401) {

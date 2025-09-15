@@ -7,6 +7,8 @@ import 'package:music_player_application/data/repository/playlist_repository.dar
 import 'package:music_player_application/service/token_storage.dart';
 import 'favorite_songs_page.dart';
 import 'genre_card.dart';
+import 'package:music_player_application/ui/playlist/create_playlist_page.dart';
+import 'package:music_player_application/ui/playlist/update_playlist_page.dart';
 import 'genre_view_model.dart';
 
 class DiscoveryTab extends StatefulWidget {
@@ -100,6 +102,37 @@ class _DiscoveryTabState extends State<DiscoveryTab> {
     });
   }
 
+  void _showSnackBar({required String message, bool isSuccess = true}) {
+    final color = isSuccess ? Colors.green : Colors.red;
+    final icon = isSuccess ? Icons.check_circle : Icons.error;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: color.withOpacity(0.9),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        content: Row(
+          children: [
+            Icon(icon, color: Colors.white),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(
+                  fontFamily: "SF Pro",
+                  fontSize: 14,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        ),
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -128,7 +161,10 @@ class _DiscoveryTabState extends State<DiscoveryTab> {
               itemCount: bannerImages.length,
               itemBuilder: (context, index) {
                 return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(16),
                     child: Image.asset(
@@ -185,12 +221,12 @@ class _DiscoveryTabState extends State<DiscoveryTab> {
               ),
             ),
 
-          //  Bài hát yêu thích
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 24, 16, 8),
+          // Bài hát yêu thích
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
             child: Text(
               'Bài hát yêu thích của bạn',
-              style: TextStyle(
+              style: const TextStyle(
                 fontFamily: 'SF Pro',
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -243,13 +279,25 @@ class _DiscoveryTabState extends State<DiscoveryTab> {
             itemCount: playlists.length + 1,
             itemBuilder: (context, index) {
               if (index == 0) {
-                //  Nút thêm playlist
+                // Nút thêm playlist
                 return GestureDetector(
-                  onTap: () {
-                    // TODO: mở form tạo playlist
+                  onTap: () async {
+                    final newPlaylist = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const CreatePlaylistPage(),
+                      ),
+                    );
+
+                    if (newPlaylist != null) {
+                      _loadPlaylists();
+                    }
                   },
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     child: Row(
                       children: [
                         Container(
@@ -263,8 +311,11 @@ class _DiscoveryTabState extends State<DiscoveryTab> {
                             child: CircleAvatar(
                               radius: 10,
                               backgroundColor: Colors.white,
-                              child: Icon(Icons.add,
-                                  size: 20, color: Colors.grey),
+                              child: Icon(
+                                Icons.add,
+                                size: 20,
+                                color: Colors.grey,
+                              ),
                             ),
                           ),
                         ),
@@ -284,58 +335,157 @@ class _DiscoveryTabState extends State<DiscoveryTab> {
               }
 
               final playlist = playlists[index - 1];
-              return GestureDetector(
-                onTap: () {
-                  // TODO: mở màn chi tiết playlist
-                },
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Row(
-                    children: [
-                      ClipRRect(
+              return Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                child: Row(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: playlist.fullImageUrl.startsWith('http')
+                          ? Image.network(
+                        playlist.fullImageUrl,
+                        width: 60,
+                        height: 60,
+                        fit: BoxFit.cover,
+                      )
+                          : Image.asset(
+                        playlist.fullImageUrl,
+                        width: 60,
+                        height: 60,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+
+                    // fix tràn
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            playlist.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontFamily: 'SF Pro',
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          Text(
+                            username ?? "",
+                            style: const TextStyle(
+                              fontFamily: 'SF Pro',
+                              fontSize: 13,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    PopupMenuButton<String>(
+                      color: Colors.white,
+                      shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
-                        child: playlist.fullImageUrl.startsWith('http')
-                            ? Image.network(
-                          playlist.fullImageUrl,
-                          width: 60,
-                          height: 60,
-                          fit: BoxFit.cover,
-                        )
-                            : Image.asset(
-                          playlist.fullImageUrl,
-                          width: 60,
-                          height: 60,
-                          fit: BoxFit.cover,
-                        ),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              playlist.name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontFamily: 'SF Pro',
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            Text(
-                              username ?? "", // in username
-                              style: const TextStyle(
-                                fontFamily: 'SF Pro',
-                                fontSize: 13,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ],
-                        ),
+                      elevation: 4,
+                      icon: const Icon(
+                        Icons.more_vert,
+                        color: Colors.black87,
                       ),
-                    ],
-                  ),
+                      onSelected: (value) async {
+                        final repo = PlaylistRepository(context);
+                        if (value == "edit") {
+                          // Mở trang sửa playlist
+                          final updatedPlaylist = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  UpdatePlaylistPage(playlist: playlist),
+                            ),
+                          );
+                        } else if (value == "delete") {
+                          final confirm = await showDialog<bool>(
+                            context: context,
+                            builder: (ctx) => AlertDialog(
+                              title: const Text("Xóa Playlist"),
+                              content: Text(
+                                "Bạn có chắc muốn xóa playlist '${playlist.name}' không?",
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () =>
+                                      Navigator.pop(ctx, false),
+                                  child: const Text("Hủy"),
+                                ),
+                                TextButton(
+                                  onPressed: () =>
+                                      Navigator.pop(ctx, true),
+                                  child: const Text(
+                                    "Xóa",
+                                    style: TextStyle(color: Colors.red),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+
+                          if (confirm == true) {
+                            try {
+                              await repo.deletePlaylist(playlist.id);
+                              _loadPlaylists();
+                              if (mounted) {
+                                _showSnackBar(
+                                  message:
+                                  "🗑️ Xóa playlist \"${playlist.name}\" thành công!",
+                                  isSuccess: true,
+                                );
+                              }
+                            } catch (e) {
+                              if (mounted) {
+                                _showSnackBar(
+                                  message:
+                                  "❌ Không thể xóa playlist. Vui lòng thử lại!",
+                                  isSuccess: false,
+                                );
+                              }
+                            }
+                          }
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        const PopupMenuItem(
+                          value: "edit",
+                          child: Row(
+                            children: [
+                              Icon(Icons.edit,
+                                  size: 18, color: Colors.black87),
+                              SizedBox(width: 8),
+                              Text("Sửa playlist"),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: "delete",
+                          child: Row(
+                            children: [
+                              Icon(Icons.delete,
+                                  size: 18, color: Colors.red),
+                              SizedBox(width: 8),
+                              Text(
+                                "Xóa playlist",
+                                style: TextStyle(color: Colors.red),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               );
             },

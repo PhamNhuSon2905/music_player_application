@@ -19,4 +19,8 @@ class PlaylistRepository {
   Future<void> deletePlaylist(int playlistId) {
     return remoteDataSource.deletePlaylist(playlistId);
   }
+  Future<Playlist> updatePlaylist(int playlistId, String name, String? imagePath, int userId) {
+    return remoteDataSource.updatePlaylist(playlistId, name, imagePath, userId);
+  }
+
 }
