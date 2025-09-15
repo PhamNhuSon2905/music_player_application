@@ -75,6 +75,7 @@ flutter:
     - assets/splash_screen.png
     - assets/card_image/
     - assets/banner/
+    - assets/default_playlist.png
 
   fonts:
     - family: SF Pro
