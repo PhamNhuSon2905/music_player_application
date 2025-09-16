@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:music_player_application/data/model/genre.dart';
 import 'package:music_player_application/data/model/playlist.dart';
@@ -10,6 +9,8 @@ import 'genre_card.dart';
 import 'package:music_player_application/ui/playlist/create_playlist_page.dart';
 import 'package:music_player_application/ui/playlist/update_playlist_page.dart';
 import 'genre_view_model.dart';
+//banner_slider
+import 'widgets/banner_slider.dart';
 
 class DiscoveryTab extends StatefulWidget {
   const DiscoveryTab({super.key});
@@ -26,45 +27,12 @@ class _DiscoveryTabState extends State<DiscoveryTab> {
   bool isLoadingGenres = true;
   bool isLoadingPlaylists = true;
 
-  final PageController _pageController = PageController();
-  final List<String> bannerImages = [
-    'assets/banner/banner_discovery.jpg',
-    'assets/banner/banner_discovery1.jpg',
-    'assets/banner/banner_discovery2.jpg',
-  ];
-  int _currentPage = 0;
-  late final Timer _bannerTimer;
-
   @override
   void initState() {
     super.initState();
     _loadGenres();
     _loadPlaylists();
     _loadUserName();
-    _startAutoSlide();
-  }
-
-  void _startAutoSlide() {
-    _bannerTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
-      if (_pageController.hasClients) {
-        _currentPage++;
-        if (_currentPage >= bannerImages.length) {
-          _currentPage = 0;
-        }
-        _pageController.animateToPage(
-          _currentPage,
-          duration: const Duration(milliseconds: 500),
-          curve: Curves.easeInOut,
-        );
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    _bannerTimer.cancel();
-    super.dispose();
   }
 
   Future<void> _loadGenres() async {
@@ -153,30 +121,9 @@ class _DiscoveryTabState extends State<DiscoveryTab> {
       ),
       body: ListView(
         children: [
-          // Banner
-          SizedBox(
-            height: 120,
-            child: PageView.builder(
-              controller: _pageController,
-              itemCount: bannerImages.length,
-              itemBuilder: (context, index) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: Image.asset(
-                      bannerImages[index],
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
+          // tách ra banner_slider
+          const BannerSlider(),
+
 
           // Chủ đề & Thể loại nhạc
           const Padding(
@@ -244,16 +191,11 @@ class _DiscoveryTabState extends State<DiscoveryTab> {
               },
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(16),
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Image.asset(
-                      'assets/banner/banner_favorite.jpg',
-                      height: 120,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                    ),
-                  ],
+                child: Image.asset(
+                  'assets/banner/banner_favorite.jpg',
+                  height: 120,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
                 ),
               ),
             ),
@@ -344,7 +286,7 @@ class _DiscoveryTabState extends State<DiscoveryTab> {
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.circular(12),
-                      child: playlist.fullImageUrl.startsWith('http')
+                      child: playlist.hasServerImage
                           ? Image.network(
                         playlist.fullImageUrl,
                         width: 60,
@@ -400,14 +342,17 @@ class _DiscoveryTabState extends State<DiscoveryTab> {
                       onSelected: (value) async {
                         final repo = PlaylistRepository(context);
                         if (value == "edit") {
-                          // Mở trang sửa playlist
                           final updatedPlaylist = await Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) =>
-                                  UpdatePlaylistPage(playlist: playlist),
+                              builder: (_) => UpdatePlaylistPage(
+                                playlist: playlist,
+                              ),
                             ),
                           );
+                          if (updatedPlaylist != null) {
+                            _loadPlaylists();
+                          }
                         } else if (value == "delete") {
                           final confirm = await showDialog<bool>(
                             context: context,
@@ -438,18 +383,11 @@ class _DiscoveryTabState extends State<DiscoveryTab> {
                             try {
                               await repo.deletePlaylist(playlist.id);
                               _loadPlaylists();
-                              if (mounted) {
-                                _showSnackBar(
-                                  message:
-                                  "🗑️ Xóa playlist \"${playlist.name}\" thành công!",
-                                  isSuccess: true,
-                                );
-                              }
                             } catch (e) {
                               if (mounted) {
                                 _showSnackBar(
                                   message:
-                                  "❌ Không thể xóa playlist. Vui lòng thử lại!",
+                                  "Không thể xóa playlist. Vui lòng thử lại!",
                                   isSuccess: false,
                                 );
                               }

@@ -3,7 +3,7 @@ import '../../utils/constants.dart';
 class Playlist {
   final int id;
   final String name;
-  final String image;
+  final String image; // link ảnh từ server (hoặc rỗng)
   final DateTime? createdAt;
 
   Playlist({
@@ -13,7 +13,7 @@ class Playlist {
     this.createdAt,
   });
 
-  // Chuẩn hoá URL ảnh
+  // Chuẩn hoá URL ảnh từ server
   static String normalizeUrl(String path) {
     if (path.isEmpty) return '';
     if (path.startsWith('/')) {
@@ -52,9 +52,13 @@ class Playlist {
 
 
   String get fullImageUrl {
-    if (image.isEmpty) return 'assets/default_playlist.png';
+    if (image.isEmpty) {
+      return 'assets/default_playlist.jpg';
+    }
     return image;
   }
+
+  bool get hasServerImage => image.isNotEmpty;
 
   @override
   String toString() {

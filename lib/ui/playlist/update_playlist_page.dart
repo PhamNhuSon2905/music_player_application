@@ -17,15 +17,13 @@ class UpdatePlaylistPage extends StatefulWidget {
 class _UpdatePlaylistPageState extends State<UpdatePlaylistPage> {
   late TextEditingController _nameController;
   File? _newImageFile; // Ảnh mới chọn
-  late String? _oldImageUrl; // Ảnh cũ từ server
+  String? _oldImageUrl; // Ảnh cũ từ server (có thể null)
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.playlist.name);
-    _oldImageUrl = widget.playlist.fullImageUrl.isNotEmpty
-        ? widget.playlist.fullImageUrl
-        : null;
+    _oldImageUrl = widget.playlist.fullImageUrl; // có thể null
   }
 
   Future<void> _pickImage() async {
@@ -131,12 +129,19 @@ class _UpdatePlaylistPageState extends State<UpdatePlaylistPage> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // Ảnh cũ
-          if (_oldImageUrl != null && _newImageFile == null) ...[
+          // Ảnh hiện tại hoặc default
+          if (_newImageFile == null) ...[
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: Image.network(
+              child: (_oldImageUrl != null && _oldImageUrl!.startsWith("http"))
+                  ? Image.network(
                 _oldImageUrl!,
+                height: 160,
+                width: double.infinity,
+                fit: BoxFit.cover,
+              )
+                  : Image.asset(
+                'assets/default_playlist.jpg',
                 height: 160,
                 width: double.infinity,
                 fit: BoxFit.cover,
@@ -207,7 +212,7 @@ class _UpdatePlaylistPageState extends State<UpdatePlaylistPage> {
           ),
           const SizedBox(height: 30),
 
-          // Button
+          // Button lưu
           ElevatedButton(
             onPressed: canSubmit ? _updatePlaylist : null,
             style: ElevatedButton.styleFrom(
