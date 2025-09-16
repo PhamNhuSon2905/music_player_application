@@ -52,13 +52,14 @@ class _CreatePlaylistPageState extends State<CreatePlaylistPage> {
     } catch (e) {
       if (mounted) {
         _showSnackBar(
-          message: "Không thể tạo playlist. Vui lòng kiểm tra lại!",
+          message: "Không thể tạo playlist. Vui lòng thử lại!",
           isSuccess: false,
         );
       }
     }
   }
 
+  /// Snackbar đẹp
   void _showSnackBar({required String message, bool isSuccess = true}) {
     final color = isSuccess ? Colors.green : Colors.red;
     final icon = isSuccess ? Icons.check_circle : Icons.error;
@@ -128,29 +129,29 @@ class _CreatePlaylistPageState extends State<CreatePlaylistPage> {
               ),
               child: _imageFile != null
                   ? ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Image.file(
-                        _imageFile!,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                      ),
-                    )
+                borderRadius: BorderRadius.circular(12),
+                child: Image.file(
+                  _imageFile!,
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                ),
+              )
                   : Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
-                        Icon(Icons.camera_alt, size: 48, color: Colors.grey),
-                        SizedBox(height: 8),
-                        Text(
-                          "Chọn ảnh bìa playlist",
-                          style: TextStyle(
-                            fontFamily: 'SF Pro',
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ],
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: const [
+                  Icon(Icons.camera_alt, size: 48, color: Colors.grey),
+                  SizedBox(height: 8),
+                  Text(
+                    "Chọn ảnh bìa playlist",
+                    style: TextStyle(
+                      fontFamily: 'SF Pro',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey,
                     ),
+                  ),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 20),

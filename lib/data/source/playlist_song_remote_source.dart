@@ -1,28 +1,35 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:music_player_application/data/model/playlist_song.dart';
+import 'package:music_player_application/data/model/song.dart';
 import 'package:music_player_application/utils/api_client.dart';
+
+import '../reponse/playlist_song_reponse.dart';
 
 class PlaylistSongRemoteDataSource {
   final ApiClient _client;
 
-  PlaylistSongRemoteDataSource(BuildContext context) : _client = ApiClient(context);
+  PlaylistSongRemoteDataSource(BuildContext context)
+      : _client = ApiClient(context);
 
   /// Lấy danh sách bài hát trong playlist
-  Future<List<PlaylistSong>> fetchSongsByPlaylist(int playlistId) async {
+  Future<List<Song>> fetchSongsByPlaylist(int playlistId) async {
     try {
-      final response = await _client.get('/api/playlists/$playlistId/songs');
+      final response = await _client.get('/api/playlist-songs/$playlistId');
 
       if (response.statusCode == 200) {
         final body = utf8.decode(response.bodyBytes);
-        final jsonList = jsonDecode(body) as List;
-        return jsonList.map((e) => PlaylistSong.fromJson(e)).toList();
+        final jsonMap = jsonDecode(body) as Map<String, dynamic>;
+        final jsonList = jsonMap['songs'] as List;
+
+        return jsonList
+            .map((e) => PlaylistSongResponse.fromJson(e).toSong())
+            .toList();
       } else {
-        debugPrint("❌ Lỗi lấy bài hát trong playlist: ${response.statusCode}");
+        debugPrint("Lỗi lấy bài hát trong playlist: ${response.statusCode}");
         return [];
       }
     } catch (e) {
-      debugPrint("❌ Exception fetchSongsByPlaylist: $e");
+      debugPrint("Exception fetchSongsByPlaylist: $e");
       return [];
     }
   }
@@ -39,23 +46,24 @@ class PlaylistSongRemoteDataSource {
       );
 
       if (response.statusCode != 200 && response.statusCode != 201) {
-        throw Exception("❌ Thêm bài hát thất bại: ${response.body}");
+        throw Exception("Thêm bài hát thất bại: ${response.body}");
       }
     } catch (e) {
-      throw Exception("❌ Exception addSongToPlaylist: $e");
+      throw Exception("Exception addSongToPlaylist: $e");
     }
   }
-
-  /// Xóa bài hát khỏi playlist
-  Future<void> removeSongFromPlaylist(int playlistSongId) async {
+// Xóa bài hát khỏi playlist
+  Future<void> removeSongFromPlaylist(int playlistId, String songId) async {
     try {
-      final response = await _client.delete('/api/playlist-songs/$playlistSongId');
+      final response =
+      await _client.delete('/api/playlist-songs/$playlistId/$songId');
 
       if (response.statusCode != 200 && response.statusCode != 204) {
-        throw Exception("❌ Xóa bài hát khỏi playlist thất bại: ${response.body}");
+        throw Exception("Xóa bài hát khỏi playlist thất bại: ${response.body}");
       }
     } catch (e) {
-      throw Exception("❌ Exception removeSongFromPlaylist: $e");
+      throw Exception("Exception removeSongFromPlaylist: $e");
     }
   }
+
 }

@@ -4,6 +4,7 @@ import 'package:music_player_application/data/model/playlist.dart';
 import 'package:music_player_application/data/repository/genre_repository.dart';
 import 'package:music_player_application/data/repository/playlist_repository.dart';
 import 'package:music_player_application/service/token_storage.dart';
+import '../../playlist_song/playlist_detail_page.dart';
 import 'favorite_songs_page.dart';
 import 'genre_card.dart';
 import 'package:music_player_application/ui/playlist/create_playlist_page.dart';
@@ -70,6 +71,7 @@ class _DiscoveryTabState extends State<DiscoveryTab> {
     });
   }
 
+  /// Snackbar đẹp
   void _showSnackBar({required String message, bool isSuccess = true}) {
     final color = isSuccess ? Colors.green : Colors.red;
     final icon = isSuccess ? Icons.check_circle : Icons.error;
@@ -121,9 +123,8 @@ class _DiscoveryTabState extends State<DiscoveryTab> {
       ),
       body: ListView(
         children: [
-          // tách ra banner_slider
+          // Banner slider
           const BannerSlider(),
-
 
           // Chủ đề & Thể loại nhạc
           const Padding(
@@ -169,11 +170,11 @@ class _DiscoveryTabState extends State<DiscoveryTab> {
             ),
 
           // Bài hát yêu thích
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 24, 16, 8),
             child: Text(
               'Bài hát yêu thích của bạn',
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'SF Pro',
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -221,7 +222,7 @@ class _DiscoveryTabState extends State<DiscoveryTab> {
             itemCount: playlists.length + 1,
             itemBuilder: (context, index) {
               if (index == 0) {
-                // Nút thêm playlist
+                // Nút tạo playlist
                 return GestureDetector(
                   onTap: () async {
                     final newPlaylist = await Navigator.push(
@@ -233,6 +234,10 @@ class _DiscoveryTabState extends State<DiscoveryTab> {
 
                     if (newPlaylist != null) {
                       _loadPlaylists();
+                      _showSnackBar(
+                        message: "Đã tạo playlist thành công!",
+                        isSuccess: true,
+                      );
                     }
                   },
                   child: Padding(
@@ -277,153 +282,175 @@ class _DiscoveryTabState extends State<DiscoveryTab> {
               }
 
               final playlist = playlists[index - 1];
-              return Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                child: Row(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: playlist.hasServerImage
-                          ? Image.network(
-                        playlist.fullImageUrl,
-                        width: 60,
-                        height: 60,
-                        fit: BoxFit.cover,
-                      )
-                          : Image.asset(
-                        playlist.fullImageUrl,
-                        width: 60,
-                        height: 60,
-                        fit: BoxFit.cover,
+              return GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => PlaylistDetailPage(
+                        playlist: playlist,
+                        username: username ?? "",
                       ),
                     ),
-                    const SizedBox(width: 12),
+                  );
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  child: Row(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: playlist.hasServerImage
+                            ? Image.network(
+                          playlist.fullImageUrl,
+                          width: 60,
+                          height: 60,
+                          fit: BoxFit.cover,
+                        )
+                            : Image.asset(
+                          playlist.fullImageUrl,
+                          width: 60,
+                          height: 60,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
 
-                    // fix tràn
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            playlist.name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontFamily: 'SF Pro',
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              playlist.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontFamily: 'SF Pro',
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            Text(
+                              username ?? "",
+                              style: const TextStyle(
+                                fontFamily: 'SF Pro',
+                                fontSize: 13,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      PopupMenuButton<String>(
+                        color: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 4,
+                        icon: const Icon(
+                          Icons.more_vert,
+                          color: Colors.black87,
+                        ),
+                        onSelected: (value) async {
+                          final repo = PlaylistRepository(context);
+                          if (value == "edit") {
+                            final updatedPlaylist =
+                            await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => UpdatePlaylistPage(
+                                  playlist: playlist,
+                                ),
+                              ),
+                            );
+                            if (updatedPlaylist != null) {
+                              _loadPlaylists();
+                              _showSnackBar(
+                                message: "Đã cập nhật playlist!",
+                                isSuccess: true,
+                              );
+                            }
+                          } else if (value == "delete") {
+                            final confirm = await showDialog<bool>(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                title: const Text("Xóa Playlist"),
+                                content: Text(
+                                  "Bạn có chắc muốn xóa playlist '${playlist.name}' không?",
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(ctx, false),
+                                    child: const Text("Hủy"),
+                                  ),
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(ctx, true),
+                                    child: const Text(
+                                      "Xóa",
+                                      style: TextStyle(color: Colors.red),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+
+                            if (confirm == true) {
+                              try {
+                                await repo.deletePlaylist(playlist.id);
+                                _loadPlaylists();
+                                _showSnackBar(
+                                  message:
+                                  "Đã xóa playlist '${playlist.name}'",
+                                  isSuccess: true,
+                                );
+                              } catch (e) {
+                                if (mounted) {
+                                  _showSnackBar(
+                                    message:
+                                    "Không thể xóa playlist. Vui lòng thử lại!",
+                                    isSuccess: false,
+                                  );
+                                }
+                              }
+                            }
+                          }
+                        },
+                        itemBuilder: (context) => [
+                          const PopupMenuItem(
+                            value: "edit",
+                            child: Row(
+                              children: [
+                                Icon(Icons.edit,
+                                    size: 18, color: Colors.black87),
+                                SizedBox(width: 8),
+                                Text("Sửa playlist"),
+                              ],
                             ),
                           ),
-                          Text(
-                            username ?? "",
-                            style: const TextStyle(
-                              fontFamily: 'SF Pro',
-                              fontSize: 13,
-                              color: Colors.grey,
+                          const PopupMenuItem(
+                            value: "delete",
+                            child: Row(
+                              children: [
+                                Icon(Icons.delete,
+                                    size: 18, color: Colors.red),
+                                SizedBox(width: 8),
+                                Text(
+                                  "Xóa playlist",
+                                  style: TextStyle(color: Colors.red),
+                                ),
+                              ],
                             ),
                           ),
                         ],
                       ),
-                    ),
-
-                    PopupMenuButton<String>(
-                      color: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 4,
-                      icon: const Icon(
-                        Icons.more_vert,
-                        color: Colors.black87,
-                      ),
-                      onSelected: (value) async {
-                        final repo = PlaylistRepository(context);
-                        if (value == "edit") {
-                          final updatedPlaylist = await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => UpdatePlaylistPage(
-                                playlist: playlist,
-                              ),
-                            ),
-                          );
-                          if (updatedPlaylist != null) {
-                            _loadPlaylists();
-                          }
-                        } else if (value == "delete") {
-                          final confirm = await showDialog<bool>(
-                            context: context,
-                            builder: (ctx) => AlertDialog(
-                              title: const Text("Xóa Playlist"),
-                              content: Text(
-                                "Bạn có chắc muốn xóa playlist '${playlist.name}' không?",
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () =>
-                                      Navigator.pop(ctx, false),
-                                  child: const Text("Hủy"),
-                                ),
-                                TextButton(
-                                  onPressed: () =>
-                                      Navigator.pop(ctx, true),
-                                  child: const Text(
-                                    "Xóa",
-                                    style: TextStyle(color: Colors.red),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-
-                          if (confirm == true) {
-                            try {
-                              await repo.deletePlaylist(playlist.id);
-                              _loadPlaylists();
-                            } catch (e) {
-                              if (mounted) {
-                                _showSnackBar(
-                                  message:
-                                  "Không thể xóa playlist. Vui lòng thử lại!",
-                                  isSuccess: false,
-                                );
-                              }
-                            }
-                          }
-                        }
-                      },
-                      itemBuilder: (context) => [
-                        const PopupMenuItem(
-                          value: "edit",
-                          child: Row(
-                            children: [
-                              Icon(Icons.edit,
-                                  size: 18, color: Colors.black87),
-                              SizedBox(width: 8),
-                              Text("Sửa playlist"),
-                            ],
-                          ),
-                        ),
-                        const PopupMenuItem(
-                          value: "delete",
-                          child: Row(
-                            children: [
-                              Icon(Icons.delete,
-                                  size: 18, color: Colors.red),
-                              SizedBox(width: 8),
-                              Text(
-                                "Xóa playlist",
-                                style: TextStyle(color: Colors.red),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               );
             },
