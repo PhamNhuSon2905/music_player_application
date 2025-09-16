@@ -22,27 +22,9 @@ class PlaylistService {
   Future<Playlist?> createPlaylist(String name, String? imagePath, int userId) async {
     try {
       final playlist = await _repo.createPlaylist(name, imagePath, userId);
-
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            backgroundColor: Colors.green,
-            content: Text("Playlist đã được tạo thành công!"),
-          ),
-        );
-      }
-
       return playlist;
     } catch (e) {
       debugPrint("Lỗi createPlaylist: $e");
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            backgroundColor: Colors.red,
-            content: Text("Tạo playlist thất bại!"),
-          ),
-        );
-      }
       return null;
     }
   }
@@ -51,27 +33,9 @@ class PlaylistService {
   Future<bool> deletePlaylist(int playlistId) async {
     try {
       await _repo.deletePlaylist(playlistId);
-
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            backgroundColor: Colors.green,
-            content: Text("🗑 Playlist đã được xóa thành công!"),
-          ),
-        );
-      }
-
       return true;
     } catch (e) {
       debugPrint("Lỗi deletePlaylist: $e");
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            backgroundColor: Colors.red,
-            content: Text("Xóa playlist thất bại!"),
-          ),
-        );
-      }
       return false;
     }
   }

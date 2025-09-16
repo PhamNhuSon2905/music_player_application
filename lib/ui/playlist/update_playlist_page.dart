@@ -16,14 +16,14 @@ class UpdatePlaylistPage extends StatefulWidget {
 
 class _UpdatePlaylistPageState extends State<UpdatePlaylistPage> {
   late TextEditingController _nameController;
-  File? _newImageFile; // Ảnh mới chọn
-  String? _oldImageUrl; // Ảnh cũ từ server (có thể null)
+  File? _newImageFile;
+  String? _oldImageUrl;
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.playlist.name);
-    _oldImageUrl = widget.playlist.fullImageUrl; // có thể null
+    _oldImageUrl = widget.playlist.fullImageUrl;
   }
 
   Future<void> _pickImage() async {
@@ -71,6 +71,7 @@ class _UpdatePlaylistPageState extends State<UpdatePlaylistPage> {
     }
   }
 
+  /// Snackbar đẹp
   void _showSnackBar({required String message, bool isSuccess = true}) {
     final color = isSuccess ? Colors.green : Colors.red;
     final icon = isSuccess ? Icons.check_circle : Icons.error;
@@ -129,7 +130,7 @@ class _UpdatePlaylistPageState extends State<UpdatePlaylistPage> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // Ảnh hiện tại hoặc default
+          // Ảnh hiện tại
           if (_newImageFile == null) ...[
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
