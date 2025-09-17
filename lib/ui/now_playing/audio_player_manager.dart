@@ -9,24 +9,27 @@ class AudioPlayerManager {
   String songUrl;
 
   Future<void> init() async {
-    durationState = Rx.combineLatest2<Duration, PlaybackEvent, DurationState>(
-      player.positionStream,
-      player.playbackEventStream,
-          (position, playbackEvent) => DurationState(
-        progress: position,
-        buffered: playbackEvent.bufferedPosition,
-        total: playbackEvent.duration,
-      ),
-    );
+    durationState =
+        Rx.combineLatest2<Duration, PlaybackEvent, DurationState>(
+          player.positionStream,
+          player.playbackEventStream,
+              (position, playbackEvent) => DurationState(
+            progress: position,
+            buffered: playbackEvent.bufferedPosition,
+            total: playbackEvent.duration,
+          ),
+        );
     await player.setUrl(songUrl);
   }
+
+
   Future<void> updateSongUrl(String url) async {
     songUrl = url;
     await player.setUrl(songUrl);
+    await player.play();
   }
 
-
-  void dispose(){
+  void dispose() {
     player.dispose();
   }
 }

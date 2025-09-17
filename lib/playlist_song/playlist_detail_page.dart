@@ -112,7 +112,6 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
             onPressed: () => Navigator.pop(context, false),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             child: const Text("Xóa"),
             onPressed: () => Navigator.pop(context, true),
           ),

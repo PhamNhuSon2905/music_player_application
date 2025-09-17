@@ -68,8 +68,9 @@ class _FavoriteSongsPageState extends State<FavoriteSongsPage> {
           final song = favoriteSongs[index];
           return SongTile(
             song: song,
-            onTap: () {
-              Navigator.push(
+            onTap: () async {
+              // 👇 Khi mở NowPlaying xong quay lại thì reload
+              await Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (_) => NowPlaying(
@@ -78,6 +79,7 @@ class _FavoriteSongsPageState extends State<FavoriteSongsPage> {
                   ),
                 ),
               );
+              loadFavorites(); // reload lại danh sách
             },
           );
         },
