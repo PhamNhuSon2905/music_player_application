@@ -3,6 +3,7 @@ import 'package:music_player_application/ui/auth/register_page.dart';
 import '../../data/repository/auth_repository.dart';
 import '../../service/token_storage.dart';
 import '../home/home.dart';
+import 'dart:io';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -52,8 +53,15 @@ class _LoginPageState extends State<LoginPage> {
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const MusicHomePage()),
+        MaterialPageRoute(
+          builder: (_) => const MusicHomePage(),
+          settings: const RouteSettings(
+            arguments: 'Đăng nhập thành công!',
+          ),
+        ),
       );
+
+
     } catch (e) {
       if (!mounted) return;
 
