@@ -22,31 +22,35 @@ class AuthRepository {
           )
           .timeout(const Duration(seconds: 1));
 
-      if (response.statusCode == 200) {
-        final json = jsonDecode(response.body);
-        final loginResponse = LoginResponse.fromJson(json);
+      switch (response.statusCode) {
+        case 200:
+          final json = jsonDecode(response.body);
+          final loginResponse = LoginResponse.fromJson(json);
 
-        // Lưu thông tin user
-        await TokenStorage.saveToken(loginResponse.token);
-        await TokenStorage.saveRole(loginResponse.role);
-        await TokenStorage.saveUserId(loginResponse.userId);
-        await TokenStorage.saveUsername(loginResponse.username);
+          // Lưu thông tin user
+          await TokenStorage.saveToken(loginResponse.token);
+          await TokenStorage.saveRole(loginResponse.role);
+          await TokenStorage.saveUserId(loginResponse.userId);
+          await TokenStorage.saveUsername(loginResponse.username);
 
-        return loginResponse;
-      } else if (response.statusCode == 401) {
-        throw Exception('Sai tài khoản hoặc mật khẩu');
-      } else {
-        throw Exception('Lỗi kết nối tới máy chủ! Vui lòng thử lại.');
+          return loginResponse;
+
+        case 401:
+          throw Exception('Tài khoản hoặc mật khẩu không chính xác!');
+
+        default:
+          throw Exception(
+            'Server lỗi ! (${response.statusCode}). Vui lòng thử lại.',
+          );
       }
-    } on SocketException {
+    } on SocketException catch (e) {
       final hasNet = await NetworkChecker.hasInternet();
-      if (hasNet) {
-        throw Exception('Lỗi kết nối tới máy chủ! Vui lòng thử lại.');
-      } else {
+      if (!hasNet) {
         throw Exception('Không có kết nối mạng! Vui lòng kiểm tra lại.');
       }
+      throw Exception('Không thể kết nối tới máy chủ! Vui lòng kiểm tra lại.');
     } on TimeoutException {
-      throw Exception('Lỗi kết nối tới máy chủ! Vui lòng thử lại.');
+      throw Exception('Không thể kết nối tới máy chủ! Vui lòng kiểm tra lại.');
     }
   }
 }
