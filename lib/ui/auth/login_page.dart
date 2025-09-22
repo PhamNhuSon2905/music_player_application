@@ -3,7 +3,6 @@ import 'package:music_player_application/ui/auth/register_page.dart';
 import '../../data/repository/auth_repository.dart';
 import '../../service/token_storage.dart';
 import '../home/home.dart';
-import 'dart:io';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -20,7 +19,7 @@ class _LoginPageState extends State<LoginPage> {
 
   bool _isLoading = false;
   String? _error;
-  bool _obscureText = true; // trạng thái để ẩn hiện pass
+  bool _obscureText = true;
 
   @override
   void dispose() {
@@ -48,8 +47,6 @@ class _LoginPageState extends State<LoginPage> {
       await TokenStorage.saveUserId(result.userId);
       await TokenStorage.saveRole(result.role);
 
-
-
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
@@ -60,16 +57,14 @@ class _LoginPageState extends State<LoginPage> {
           ),
         ),
       );
-
-
     } catch (e) {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text(
-            'Tên tài khoản hoặc mật khẩu không chính xác!',
-            style: TextStyle(fontFamily: 'SF Pro'),
+          content: Text(
+            e.toString().replaceAll('Exception: ', ''), // lấy message thực tế
+            style: const TextStyle(fontFamily: 'SF Pro'),
           ),
           backgroundColor: Colors.redAccent,
           behavior: SnackBarBehavior.floating,
@@ -171,7 +166,7 @@ class _LoginPageState extends State<LoginPage> {
                   TextFormField(
                     controller: passwordController,
                     style: const TextStyle(color: Colors.black87, fontFamily: 'SF Pro'),
-                    obscureText: _obscureText, // Sử dụng biến trạng thái
+                    obscureText: _obscureText,
                     decoration: _inputStyle("Mật khẩu", Icons.lock_outline).copyWith(
                       suffixIcon: IconButton(
                         icon: Icon(
@@ -181,7 +176,7 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         onPressed: () {
                           setState(() {
-                            _obscureText = !_obscureText; // chuyển trạng thái
+                            _obscureText = !_obscureText;
                           });
                         },
                       ),
