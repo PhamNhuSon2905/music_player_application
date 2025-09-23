@@ -4,15 +4,26 @@ import 'package:music_player_application/ui/settings/theme_notifier.dart';
 import 'package:music_player_application/ui/splash_screen/splash_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
+import 'package:just_audio_background/just_audio_background.dart';
+
 
 Future<void> clearSession() async {
   final prefs = await SharedPreferences.getInstance();
   await prefs.clear();
 }
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Init JustAudioBackground
+  await JustAudioBackground.init(
+    androidNotificationChannelId: 'music_player_channel',
+    androidNotificationChannelName: 'Music Player',
+    androidNotificationOngoing: true,
+  );
+
   await clearSession();
+
   runApp(
     ChangeNotifierProvider(
       create: (_) => ThemeNotifier(),
