@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:async';
 import 'package:audio_video_progress_bar/audio_video_progress_bar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -47,6 +48,10 @@ class _NowPlayingPageState extends State<NowPlayingPage>
   late FavoriteSongRepository _favoriteSongRepository;
   int _userId = 0;
 
+  // giữ subscription để cancel khi dispose
+  StreamSubscription<bool>? _playingSub;
+  StreamSubscription<PlayerState>? _playerStateSub;
+
   @override
   void initState() {
     super.initState();
@@ -56,13 +61,14 @@ class _NowPlayingPageState extends State<NowPlayingPage>
       duration: const Duration(seconds: 20),
     );
 
-    _audioPlayerManager = AudioPlayerManager(songUrl: _song.source);
+    _audioPlayerManager = AudioPlayerManager(song: _song);
     _selectedItemIndex = widget.songs.indexOf(widget.playingSong);
     _loopMode = LoopMode.off;
 
     _initAudio();
 
-    _audioPlayerManager.player.playingStream.listen((isPlaying) {
+    _playingSub = _audioPlayerManager.player.playingStream.listen((isPlaying) {
+      if (!mounted) return;
       if (isPlaying) {
         _playRotationAnim();
       } else {
@@ -70,11 +76,17 @@ class _NowPlayingPageState extends State<NowPlayingPage>
       }
     });
 
-    _audioPlayerManager.player.playerStateStream.listen((state) {
-      if (state.processingState == ProcessingState.ready && state.playing) {
-        _playRotationAnim();
-      }
-    });
+    _playerStateSub =
+        _audioPlayerManager.player.playerStateStream.listen((state) {
+          if (!mounted) return;
+
+          if (state.processingState == ProcessingState.ready && state.playing) {
+            _playRotationAnim();
+          } else if (state.processingState == ProcessingState.completed) {
+            _pauseRotationAnim();
+          }
+        });
+
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initFavoriteState();
@@ -83,7 +95,7 @@ class _NowPlayingPageState extends State<NowPlayingPage>
 
   Future<void> _initAudio() async {
     await _audioPlayerManager.init();
-    setState(() {});
+    if (mounted) setState(() {});
   }
 
   Future<void> _initFavoriteState() async {
@@ -92,13 +104,14 @@ class _NowPlayingPageState extends State<NowPlayingPage>
     final favorites =
     await _favoriteSongRepository.fetchFavoriteSongsByUserId(_userId);
 
-    setState(() {
-      _isFavorite =
-          favorites.any((fav) => fav.songId.toString() == _song.id.toString());
-    });
+    if (mounted) {
+      setState(() {
+        _isFavorite =
+            favorites.any((fav) => fav.songId.toString() == _song.id.toString());
+      });
+    }
   }
 
-  /// ✅ Hàm show SnackBar đẹp
   void _showSnackBar({required String message, bool isSuccess = true}) {
     final color = isSuccess ? Colors.green : Colors.red;
     final icon = isSuccess ? Icons.check_circle : Icons.error;
@@ -133,16 +146,20 @@ class _NowPlayingPageState extends State<NowPlayingPage>
   Future<void> _toggleFavorite() async {
     if (_isFavorite) {
       await _favoriteSongRepository.removeFavorite(_userId, _song.id);
-      setState(() {
-        _isFavorite = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isFavorite = false;
+        });
+      }
       _showSnackBar(
           message: 'Đã gỡ "${_song.title}" khỏi Yêu thích', isSuccess: false);
     } else {
       await _favoriteSongRepository.addFavorite(_userId, _song.id);
-      setState(() {
-        _isFavorite = true;
-      });
+      if (mounted) {
+        setState(() {
+          _isFavorite = true;
+        });
+      }
       _showSnackBar(
           message: 'Đã thêm "${_song.title}" vào Yêu thích', isSuccess: true);
     }
@@ -172,7 +189,6 @@ class _NowPlayingPageState extends State<NowPlayingPage>
                 const Text('_ ___ _'),
                 const SizedBox(height: 8),
 
-                /// Đĩa nhạc quay
                 AnimatedSwitcher(
                   duration: const Duration(milliseconds: 400),
                   child: RotationTransition(
@@ -370,9 +386,7 @@ class _NowPlayingPageState extends State<NowPlayingPage>
       _song = nextSong;
     });
 
-    await _audioPlayerManager.updateSongUrl(nextSong.source);
-    await _audioPlayerManager.player.play();
-
+    await _audioPlayerManager.updateSong(nextSong);
     _initFavoriteState();
   }
 
@@ -391,9 +405,7 @@ class _NowPlayingPageState extends State<NowPlayingPage>
       _song = prevSong;
     });
 
-    await _audioPlayerManager.updateSongUrl(prevSong.source);
-    await _audioPlayerManager.player.play();
-
+    await _audioPlayerManager.updateSong(prevSong);
     _initFavoriteState();
   }
 
@@ -423,11 +435,15 @@ class _NowPlayingPageState extends State<NowPlayingPage>
   }
 
   void _pauseRotationAnim() {
-    _imageAnimController.stop(canceled: false);
+    if (mounted) {
+      _imageAnimController.stop(canceled: false);
+    }
   }
 
   @override
   void dispose() {
+    _playingSub?.cancel();
+    _playerStateSub?.cancel();
     _audioPlayerManager.dispose();
     _imageAnimController.dispose();
     super.dispose();
