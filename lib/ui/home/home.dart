@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:music_player_application/ui/discovery/discovery.dart';
 import 'package:music_player_application/ui/home/viewmodel.dart';
@@ -33,34 +32,26 @@ class MusicHomePage extends StatefulWidget {
 }
 
 class _MusicHomePageState extends State<MusicHomePage> {
+  int _currentIndex = 0;
+
   final List<Widget> _tabs = [
     const HomeTab(),
     const DiscoveryTab(),
     const AccountTab(),
     const SettingsTab(),
   ];
-
-  // Biến cờ để chỉ show 1 lần
   bool _hasShownLoginMessage = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-
-    // Lấy thông báo từ LoginPage
     final message = ModalRoute.of(context)?.settings.arguments as String?;
-
-    // Chỉ hiển thị SnackBar 1 lần
     if (!_hasShownLoginMessage && message != null) {
       _hasShownLoginMessage = true;
-
       WidgetsBinding.instance.addPostFrameCallback((_) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              message,
-              style: const TextStyle(fontFamily: 'SF Pro'),
-            ),
+            content: Text(message),
             backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating,
             margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -77,39 +68,27 @@ class _MusicHomePageState extends State<MusicHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: CupertinoTabScaffold(
-        tabBar: CupertinoTabBar(
-          backgroundColor: Colors.white,
-          activeColor: Colors.deepPurple,
-          inactiveColor: Colors.grey,
-          items: const [
-            BottomNavigationBarItem(
-                icon: Icon(CupertinoIcons.music_house_fill), label: 'Thư Viện'),
-            BottomNavigationBarItem(
-                icon: Icon(CupertinoIcons.compass_fill), label: 'Khám Phá'),
-            BottomNavigationBarItem(
-                icon: Icon(CupertinoIcons.person_fill), label: 'Cá Nhân'),
-            BottomNavigationBarItem(
-                icon: Icon(CupertinoIcons.settings_solid), label: 'Cài Đặt'),
-          ],
+      appBar: AppBar(
+        title: const Text(
+          'Zing MP3 Music',
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
-        tabBuilder: (BuildContext context, int index) {
-          return CupertinoPageScaffold(
-            navigationBar: CupertinoNavigationBar(
-              middle: const Text(
-                'Zing MP3 Music',
-                style: TextStyle(
-                  fontFamily: 'SF Pro',
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              backgroundColor: Colors.white,
-              border: null,
-            ),
-            child: _tabs[index],
-          );
-        },
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 0,
+      ),
+      body: _tabs[_currentIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        selectedItemColor: Colors.deepPurple,
+        unselectedItemColor: Colors.grey,
+        onTap: (index) => setState(() => _currentIndex = index),
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.library_music), label: 'Thư Viện'),
+          BottomNavigationBarItem(icon: Icon(Icons.explore), label: 'Khám Phá'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Cá Nhân'),
+          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Cài Đặt'),
+        ],
       ),
     );
   }
@@ -117,16 +96,12 @@ class _MusicHomePageState extends State<MusicHomePage> {
 
 class HomeTab extends StatelessWidget {
   const HomeTab({super.key});
-
   @override
-  Widget build(BuildContext context) {
-    return const HomeTabPage();
-  }
+  Widget build(BuildContext context) => const HomeTabPage();
 }
 
 class HomeTabPage extends StatefulWidget {
   const HomeTabPage({super.key});
-
   @override
   State<HomeTabPage> createState() => _HomeTabPageState();
 }
@@ -196,11 +171,24 @@ class _HomeTabPageState extends State<HomeTabPage> {
   Widget _buildSearchBar() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      child: CupertinoSearchTextField(
+      child: TextField(
         controller: _searchController,
-        placeholder: 'Tìm kiếm bài hát, nghệ sĩ...',
+        decoration: InputDecoration(
+          hintText: 'Tìm kiếm bài hát, nghệ sĩ...',
+          prefixIcon: const Icon(Icons.search),
+          suffixIcon: _searchController.text.isNotEmpty
+              ? IconButton(
+            icon: const Icon(Icons.clear),
+            onPressed: _onSearchCleared,
+          )
+              : null,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          filled: true,
+          fillColor: Colors.grey.shade100,
+        ),
         onChanged: _onSearchChanged,
-        onSuffixTap: _onSearchCleared,
       ),
     );
   }
@@ -223,9 +211,7 @@ class _HomeTabPageState extends State<HomeTabPage> {
   }
 
   Widget getProgressBar() => const Center(
-    child: CircularProgressIndicator(
-      color: Colors.deepPurple,
-    ),
+    child: CircularProgressIndicator(color: Colors.deepPurple),
   );
 
   Widget getListView() {
@@ -284,9 +270,11 @@ class _HomeTabPageState extends State<HomeTabPage> {
   void navigate(Song song) {
     Navigator.push(
       context,
-      CupertinoPageRoute(
-        builder: (context) =>
-            NowPlaying(songs: filteredSongs, playingSong: song),
+      MaterialPageRoute(
+        builder: (context) => NowPlaying(
+          songs: filteredSongs,
+          playingSong: song,
+        ),
       ),
     );
   }
