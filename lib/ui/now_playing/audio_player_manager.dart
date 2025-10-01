@@ -1,77 +1,91 @@
+import 'dart:async';
+import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:rxdart/rxdart.dart';
-import 'package:audio_service/audio_service.dart';
-import 'package:music_player_application/data/model/song.dart';
+import '../../data/model/song.dart';
+import '../../data/repository/favorite_song_repository.dart';
+import '../../service/token_storage.dart';
+import '../providers/player_provider.dart';
 
 class AudioPlayerManager {
-  AudioPlayerManager({required this.song});
+  final PlayerProvider provider;
+  final AnimationController imageAnimController;
+  final BuildContext context;
 
-  final player = AudioPlayer();
-  late Stream<DurationState> durationState;
-  Song song;
+  late StreamSubscription<bool> _playingSub;
+  late StreamSubscription<PlayerState> _playerStateSub;
 
-  Future<void> init() async {
-    durationState = Rx.combineLatest3<Duration, Duration, Duration?, DurationState>(
-      player.positionStream,
-      player.bufferedPositionStream,
-      player.durationStream,
-          (position, buffered, total) => DurationState(
-        progress: position,
-        buffered: buffered,
-        total: total,
-      ),
-    );
+  late FavoriteSongRepository _favoriteSongRepository;
+  int _userId = 0;
 
-    await _setSource(song);
+  AudioPlayerManager({
+    required this.provider,
+    required this.imageAnimController,
+    required this.context,
+  }) {
+    _initListeners();
+    _initFavoriteRepo();
   }
 
-  Future<void> updateSong(Song newSong) async {
-    song = newSong;
-    await _setSource(song);
-    await player.play();
+  void _initListeners() {
+    _playingSub = provider.player.playingStream.listen((isPlaying) {
+      isPlaying ? _playRotationAnim() : _pauseRotationAnim();
+    });
+
+    _playerStateSub = provider.player.playerStateStream.listen((state) {
+      if (state.processingState == ProcessingState.ready && state.playing) {
+        _playRotationAnim();
+      } else if (state.processingState == ProcessingState.completed) {
+        _pauseRotationAnim();
+      }
+    });
   }
 
-  Future<void> _setSource(Song song) async {
-    final Uri artUri = (song.image.isNotEmpty && song.image.startsWith('http'))
-        ? Uri.parse(song.image)
-        : Uri.parse("https://via.placeholder.com/150");
+  Future<void> _initFavoriteRepo() async {
+    _userId = await TokenStorage.getUserId();
+    _favoriteSongRepository = FavoriteSongRepository(context);
+  }
 
-    await player.setAudioSource(
-      AudioSource.uri(
-        Uri.parse(song.source),
-        // dùng MediaItem cho just_audio_background
-        tag: MediaItem(
-          id: song.id.toString(),
-          title: song.title,
-          album: song.album.isNotEmpty ? song.album : "Album không xác định",
-          artist: song.artist.isNotEmpty ? song.artist : "Ca sĩ không xác định",
-          artUri: artUri,
-          extras: {
-            'androidCompactActionIndices': [0, 1, 2],
-            'androidNotificationActions': [
-              'skipToPrevious',
-              'stop',
-              'skipToNext',
-            ],
-          }
-        ),
+  Future<void> toggleFavorite(
+      Song song, bool isFavorite, Function(bool) callback) async {
+    if (_userId == 0) {
+      _showSnackBar("Không tìm thấy userId");
+      return;
+    }
+
+    if (isFavorite) {
+      await _favoriteSongRepository.removeFavorite(_userId, song.id);
+      callback(false);
+      _showSnackBar('Đã gỡ "${song.title}" khỏi Yêu thích');
+    } else {
+      await _favoriteSongRepository.addFavorite(_userId, song.id);
+      callback(true);
+      _showSnackBar('Đã thêm "${song.title}" vào Yêu thích');
+    }
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: const Duration(seconds: 2),
       ),
     );
+  }
+
+  void _playRotationAnim() {
+    if (!imageAnimController.isAnimating) {
+      imageAnimController.repeat();
+    }
+  }
+
+  void _pauseRotationAnim() {
+    if (imageAnimController.isAnimating) {
+      imageAnimController.stop(canceled: false);
+    }
   }
 
   void dispose() {
-    player.dispose();
+    _playingSub.cancel();
+    _playerStateSub.cancel();
   }
-}
-
-class DurationState {
-  const DurationState({
-    required this.progress,
-    required this.buffered,
-    this.total,
-  });
-
-  final Duration progress;
-  final Duration buffered;
-  final Duration? total;
 }

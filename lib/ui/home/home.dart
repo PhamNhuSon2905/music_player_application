@@ -4,7 +4,9 @@ import 'package:music_player_application/ui/home/viewmodel.dart';
 import 'package:music_player_application/ui/now_playing/playing.dart';
 import 'package:music_player_application/ui/settings/settings.dart';
 import 'package:music_player_application/ui/user/user.dart';
+import 'package:provider/provider.dart';
 import '../../data/model/song.dart';
+import '../providers/player_provider.dart';
 
 class MusicApp extends StatelessWidget {
   const MusicApp({super.key});
@@ -14,9 +16,15 @@ class MusicApp extends StatelessWidget {
     return MaterialApp(
       title: 'Music App',
       theme: ThemeData(
+        fontFamily: "SF Pro",
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
         scaffoldBackgroundColor: Colors.white,
+        textTheme: const TextTheme(
+          bodyMedium: TextStyle(fontFamily: "SF Pro"),
+          bodyLarge: TextStyle(fontFamily: "SF Pro"),
+          titleMedium: TextStyle(fontFamily: "SF Pro"),
+        ),
       ),
       home: const MusicHomePage(),
       debugShowCheckedModeBanner: false,
@@ -70,18 +78,24 @@ class _MusicHomePageState extends State<MusicHomePage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'Zing MP3 Music',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          'Music App',
+          style: TextStyle(
+            fontFamily: "SF Pro",
+            fontWeight: FontWeight.w600,
+            fontSize: 20,
+          ),
         ),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
+        centerTitle: true,
       ),
       body: _tabs[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         selectedItemColor: Colors.deepPurple,
         unselectedItemColor: Colors.grey,
+        type: BottomNavigationBarType.fixed,
         onTap: (index) => setState(() => _currentIndex = index),
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.library_music), label: 'Thư Viện'),
@@ -170,23 +184,27 @@ class _HomeTabPageState extends State<HomeTabPage> {
 
   Widget _buildSearchBar() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
       child: TextField(
         controller: _searchController,
+        style: const TextStyle(fontSize: 15),
         decoration: InputDecoration(
-          hintText: 'Tìm kiếm bài hát, nghệ sĩ...',
-          prefixIcon: const Icon(Icons.search),
+          hintText: 'Tìm kiếm bài hát, ca sĩ...',
+          hintStyle: const TextStyle(color: Colors.grey, fontSize: 15),
+          prefixIcon: const Icon(Icons.search, size: 22, color: Colors.grey),
           suffixIcon: _searchController.text.isNotEmpty
               ? IconButton(
-            icon: const Icon(Icons.clear),
+            icon: const Icon(Icons.clear, size: 20, color: Colors.grey),
             onPressed: _onSearchCleared,
           )
               : null,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
           filled: true,
           fillColor: Colors.grey.shade100,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20),
+            borderSide: BorderSide.none,
+          ),
         ),
         onChanged: _onSearchChanged,
       ),
@@ -219,7 +237,7 @@ class _HomeTabPageState extends State<HomeTabPage> {
       itemCount: filteredSongs.length,
       itemBuilder: (context, index) => _SongItemSection(
         song: filteredSongs[index],
-        onTap: () => navigate(filteredSongs[index]),
+        onTap: () => navigate(index),
         onMoreTap: () => showBottomSheet(),
       ),
     );
@@ -267,15 +285,12 @@ class _HomeTabPageState extends State<HomeTabPage> {
     );
   }
 
-  void navigate(Song song) {
+  void navigate(int index) {
+    context.read<PlayerProvider>().setQueue(filteredSongs, startIndex: index);
+
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => NowPlaying(
-          songs: filteredSongs,
-          playingSong: song,
-        ),
-      ),
+      MaterialPageRoute(builder: (context) => NowPlaying()),
     );
   }
 
@@ -301,7 +316,8 @@ class _SongItemSection extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
-            ClipOval(
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
               child: FadeInImage.assetNetwork(
                 placeholder: 'assets/musical_note.jpg',
                 image: song.image,
@@ -324,9 +340,10 @@ class _SongItemSection extends StatelessWidget {
                   Text(
                     song.title,
                     style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: Colors.black87),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                      color: Colors.black87,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
