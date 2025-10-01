@@ -3,6 +3,8 @@ import 'package:music_player_application/data/model/song.dart';
 import 'package:music_player_application/data/repository/favorite_song_repository.dart';
 import 'package:music_player_application/service/token_storage.dart';
 import 'package:music_player_application/ui/now_playing/playing.dart';
+import 'package:provider/provider.dart';
+import '../providers/player_provider.dart';
 
 class FavoriteSongsPage extends StatefulWidget {
   const FavoriteSongsPage({super.key});
@@ -39,13 +41,23 @@ class _FavoriteSongsPageState extends State<FavoriteSongsPage> {
         isLoading = false;
       });
     } catch (e, st) {
-      print('[FavoriteSongsPage] Lỗi loadFavorites: $e');
-      print(st);
+      debugPrint('[FavoriteSongsPage] Lỗi loadFavorites: $e\n$st');
       setState(() {
         isLoading = false;
         favoriteSongs = [];
       });
     }
+  }
+
+  void _openNowPlaying(int index) {
+    context.read<PlayerProvider>().setQueue(favoriteSongs, startIndex: index);
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const NowPlaying()),
+    ).then((_) {
+      loadFavorites();
+    });
   }
 
   @override
@@ -62,28 +74,16 @@ class _FavoriteSongsPageState extends State<FavoriteSongsPage> {
           : favoriteSongs.isEmpty
           ? const Center(child: Text('Không có bài hát yêu thích nào.'))
           : ListView.builder(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        itemCount: favoriteSongs.length,
-        itemBuilder: (context, index) {
-          final song = favoriteSongs[index];
-          return SongTile(
-            song: song,
-            onTap: () async {
-              // 👇 Khi mở NowPlaying xong quay lại thì reload
-              await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => NowPlaying(
-                    songs: favoriteSongs,
-                    playingSong: song,
-                  ),
-                ),
-              );
-              loadFavorites(); // reload lại danh sách
-            },
-          );
-        },
-      ),
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              itemCount: favoriteSongs.length,
+              itemBuilder: (context, index) {
+                final song = favoriteSongs[index];
+                return SongTile(
+                  song: song,
+                  onTap: () => _openNowPlaying(index),
+                );
+              },
+            ),
     );
   }
 }
@@ -115,11 +115,7 @@ class SongTile extends StatelessWidget {
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),
-      subtitle: Text(
-        song.artist,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
+      subtitle: Text(song.artist, maxLines: 1, overflow: TextOverflow.ellipsis),
       onTap: onTap,
     );
   }
