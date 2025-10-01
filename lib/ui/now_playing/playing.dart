@@ -1,7 +1,6 @@
 import 'dart:math';
 import 'dart:async';
 import 'package:audio_video_progress_bar/audio_video_progress_bar.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:music_player_application/data/model/song.dart';
@@ -48,7 +47,6 @@ class _NowPlayingPageState extends State<NowPlayingPage>
   late FavoriteSongRepository _favoriteSongRepository;
   int _userId = 0;
 
-  // giữ subscription để cancel khi dispose
   StreamSubscription<bool>? _playingSub;
   StreamSubscription<PlayerState>? _playerStateSub;
 
@@ -79,14 +77,12 @@ class _NowPlayingPageState extends State<NowPlayingPage>
     _playerStateSub =
         _audioPlayerManager.player.playerStateStream.listen((state) {
           if (!mounted) return;
-
           if (state.processingState == ProcessingState.ready && state.playing) {
             _playRotationAnim();
           } else if (state.processingState == ProcessingState.completed) {
             _pauseRotationAnim();
           }
         });
-
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initFavoriteState();
@@ -106,8 +102,8 @@ class _NowPlayingPageState extends State<NowPlayingPage>
 
     if (mounted) {
       setState(() {
-        _isFavorite =
-            favorites.any((fav) => fav.songId.toString() == _song.id.toString());
+        _isFavorite = favorites.any(
+                (fav) => fav.songId.toString() == _song.id.toString());
       });
     }
   }
@@ -170,104 +166,104 @@ class _NowPlayingPageState extends State<NowPlayingPage>
     final screenWidth = MediaQuery.of(context).size.width;
     const delta = 64;
 
-    return CupertinoPageScaffold(
-      navigationBar: CupertinoNavigationBar(
-        middle: const Text('Trình Phát Nhạc'),
-        trailing: IconButton(
-          onPressed: () {},
-          icon: const Icon(Icons.more_horiz),
-        ),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Trình Phát Nhạc'),
+        actions: [
+          IconButton(
+            onPressed: () {},
+            icon: const Icon(Icons.more_horiz),
+          ),
+        ],
       ),
-      child: Scaffold(
-        body: SafeArea(
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                const SizedBox(height: 56),
-                Text(_song.album),
-                const Text('_ ___ _'),
-                const SizedBox(height: 8),
+      body: SafeArea(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              const SizedBox(height: 56),
+              Text(_song.album),
+              const Text('_ ___ _'),
+              const SizedBox(height: 8),
 
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 400),
-                  child: RotationTransition(
-                    key: ValueKey(_song.image),
-                    turns: _imageAnimController,
-                    child: ClipOval(
-                      child: (_song.image.isEmpty ||
-                          !_song.image.startsWith('http'))
-                          ? Image.asset(
-                        'assets/musical_note.jpg',
-                        width: screenWidth - delta,
-                        height: screenWidth - delta,
-                        fit: BoxFit.cover,
-                      )
-                          : Image.network(
-                        _song.image,
-                        width: screenWidth - delta,
-                        height: screenWidth - delta,
-                        fit: BoxFit.cover,
-                        loadingBuilder: (context, child, progress) {
-                          if (progress == null) return child;
-                          return Image.asset(
-                            'assets/musical_note.jpg',
-                            width: screenWidth - delta,
-                            height: screenWidth - delta,
-                            fit: BoxFit.cover,
-                          );
-                        },
-                        errorBuilder: (context, error, stackTrace) {
-                          return Image.asset(
-                            'assets/musical_note.jpg',
-                            width: screenWidth - delta,
-                            height: screenWidth - delta,
-                            fit: BoxFit.cover,
-                          );
-                        },
-                      ),
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 400),
+                child: RotationTransition(
+                  key: ValueKey(_song.image),
+                  turns: _imageAnimController,
+                  child: ClipOval(
+                    child: (_song.image.isEmpty ||
+                        !_song.image.startsWith('http'))
+                        ? Image.asset(
+                      'assets/musical_note.jpg',
+                      width: screenWidth - delta,
+                      height: screenWidth - delta,
+                      fit: BoxFit.cover,
+                    )
+                        : Image.network(
+                      _song.image,
+                      width: screenWidth - delta,
+                      height: screenWidth - delta,
+                      fit: BoxFit.cover,
+                      loadingBuilder: (context, child, progress) {
+                        if (progress == null) return child;
+                        return Image.asset(
+                          'assets/musical_note.jpg',
+                          width: screenWidth - delta,
+                          height: screenWidth - delta,
+                          fit: BoxFit.cover,
+                        );
+                      },
+                      errorBuilder: (context, error, stackTrace) {
+                        return Image.asset(
+                          'assets/musical_note.jpg',
+                          width: screenWidth - delta,
+                          height: screenWidth - delta,
+                          fit: BoxFit.cover,
+                        );
+                      },
                     ),
                   ),
                 ),
+              ),
 
-                Padding(
-                  padding: const EdgeInsets.only(top: 16, bottom: 16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      IconButton(
-                        onPressed: () {},
-                        icon: const Icon(Icons.share_outlined),
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      Column(
-                        children: [
-                          Text(_song.title,
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.bold)),
-                          Text(_song.artist,
-                              style: const TextStyle(color: Colors.grey)),
-                        ],
-                      ),
-                      IconButton(
-                        onPressed: _toggleFavorite,
-                        icon: Icon(_isFavorite
-                            ? Icons.favorite
-                            : Icons.favorite_border),
-                        color: _isFavorite
-                            ? Colors.red
-                            : Theme.of(context).colorScheme.primary,
-                      ),
-                    ],
-                  ),
+              Padding(
+                padding: const EdgeInsets.only(top: 16, bottom: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    IconButton(
+                      onPressed: () {},
+                      icon: const Icon(Icons.share_outlined),
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    Column(
+                      children: [
+                        Text(_song.title,
+                            style: const TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold)),
+                        Text(_song.artist,
+                            style: const TextStyle(color: Colors.grey)),
+                      ],
+                    ),
+                    IconButton(
+                      onPressed: _toggleFavorite,
+                      icon: Icon(_isFavorite
+                          ? Icons.favorite
+                          : Icons.favorite_border),
+                      color: _isFavorite
+                          ? Colors.red
+                          : Theme.of(context).colorScheme.primary,
+                    ),
+                  ],
                 ),
-                Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 32),
-                    child: _progressBar()),
-                Padding(
-                    padding: const EdgeInsets.all(8), child: _mediaButtons()),
-              ],
-            ),
+              ),
+              Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 32),
+                  child: _progressBar()),
+              Padding(
+                  padding: const EdgeInsets.all(8), child: _mediaButtons()),
+            ],
           ),
         ),
       ),
