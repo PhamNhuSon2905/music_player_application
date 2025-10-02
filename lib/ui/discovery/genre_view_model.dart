@@ -4,6 +4,8 @@ import 'package:music_player_application/data/model/song.dart';
 import 'package:music_player_application/data/repository/genre_repository.dart';
 import 'package:music_player_application/ui/now_playing/playing.dart';
 import 'package:provider/provider.dart';
+import '../../widgets/base_scaffold.dart';
+import '../../widgets/playing_indicator.dart';
 import '../providers/player_provider.dart';
 
 class GenreSongPage extends StatefulWidget {
@@ -30,13 +32,6 @@ class _GenreSongPageState extends State<GenreSongPage> {
       final repo = GenreRepository(context);
       final data = await repo.fetchSongsByGenreId(widget.genre.id);
 
-      // DEBUG: In thông tin bài hát, ảnh, source
-      for (var song in data) {
-        debugPrint("Tên bài hát: ${song.title}");
-        debugPrint("Image URL: ${song.image}");
-        debugPrint("Audio URL: ${song.source}");
-      }
-
       setState(() {
         songs = data;
         isLoading = false;
@@ -50,57 +45,133 @@ class _GenreSongPageState extends State<GenreSongPage> {
     }
   }
 
-  void _openNowPlaying(int index) {
-    context.read<PlayerProvider>().setQueue(songs, startIndex: index);
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const NowPlaying()),
+  Future<void> _openNowPlaying(int index) async {
+    final player = context.read<PlayerProvider>();
+    await player.setQueue(songs, startIndex: index);
+
+    player.setNowPlayingOpen(true);
+    player.play();
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      builder: (_) {
+        return ChangeNotifierProvider.value(
+          value: player,
+          child: const NowPlaying(),
+        );
+      },
     );
+
+    player.setNowPlayingOpen(false);
   }
 
   Widget _buildSongItem(Song song, int index) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      leading: ClipOval(
-        child: FadeInImage.assetNetwork(
-          placeholder: 'assets/musical_note.jpg',
-          image: song.image,
-          width: 60,
-          height: 60,
-          fit: BoxFit.cover,
-          imageErrorBuilder: (_, error, stackTrace) {
-            debugPrint("Failed to load image: ${song.image}");
-            return Image.asset('assets/musical_note.jpg', width: 60, height: 60);
-          },
+    return InkWell(
+      onTap: () => _openNowPlaying(index),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            // Ảnh bài hát + Chart overlay
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: (song.image.isEmpty || !song.image.startsWith("http"))
+                      ? Image.asset(
+                    'assets/musical_note.jpg',
+                    width: 56,
+                    height: 56,
+                    fit: BoxFit.cover,
+                  )
+                      : Image.network(
+                    song.image,
+                    width: 56,
+                    height: 56,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Image.asset(
+                      'assets/musical_note.jpg',
+                      width: 56,
+                      height: 56,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+                // Chart khi bài này đang phát
+                Consumer<PlayerProvider>(
+                  builder: (context, player, _) {
+                    final isCurrent = player.currentSong?.id == song.id;
+                    final isPlaying = isCurrent && player.isPlaying;
+                    return isPlaying
+                        ? const PlayingIndicator(isPlaying: true)
+                        : const SizedBox();
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(width: 16),
+
+            // Thông tin bài hát
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    song.title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                      color: Colors.black87,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    song.artist,
+                    style: const TextStyle(fontSize: 14, color: Colors.grey),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+
+            // Nút more (nếu muốn thêm options sau này)
+            IconButton(
+              icon: const Icon(Icons.more_horiz, color: Colors.grey),
+              onPressed: () {
+                // TODO: thêm menu tuỳ chọn giống HomeTab nếu cần
+              },
+            ),
+          ],
         ),
       ),
-      title: Text(song.title, maxLines: 1, overflow: TextOverflow.ellipsis),
-      subtitle: Text(song.artist, maxLines: 1, overflow: TextOverflow.ellipsis),
-      onTap: () {
-        debugPrint("Tapped song: ${song.title}");
-        _openNowPlaying(index);
-      },
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return BaseScaffold(
       appBar: AppBar(
         title: Text(widget.genre.name),
         centerTitle: true,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 0,
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : songs.isEmpty
           ? const Center(child: Text("Không có bài hát nào"))
-          : ListView.separated(
+          : ListView.builder(
         itemCount: songs.length,
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        separatorBuilder: (_, __) =>
-        const Divider(indent: 72, endIndent: 16),
         itemBuilder: (_, index) => _buildSongItem(songs[index], index),
       ),
+      withBottomNav: true,
     );
   }
 }

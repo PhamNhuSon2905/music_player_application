@@ -5,6 +5,8 @@ import 'package:music_player_application/service/playlist_song_service.dart';
 import 'package:music_player_application/ui/now_playing/playing.dart';
 import 'package:provider/provider.dart';
 import '../ui/providers/player_provider.dart';
+import '../widgets/base_scaffold.dart';
+import '../widgets/playing_indicator.dart';
 import 'add_song_to_playlist_page.dart';
 
 class PlaylistDetailPage extends StatefulWidget {
@@ -33,7 +35,6 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
     _loadSongs();
   }
 
-  /// snackbar đẹp
   void _showSnackBar({required String message, bool isSuccess = true}) {
     final color = isSuccess ? Colors.green : Colors.red;
     final icon = isSuccess ? Icons.check_circle : Icons.error;
@@ -85,16 +86,29 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
 
     if (added == true) {
       _loadSongs();
-      _showSnackBar(message: "Đã thêm bài hát vào playlist!");
     }
   }
 
-  void _openNowPlaying(int index) {
-    context.read<PlayerProvider>().setQueue(_songs, startIndex: index);
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const NowPlaying()),
+  Future<void> _openNowPlaying(int index) async {
+    final player = context.read<PlayerProvider>();
+    await player.setQueue(_songs, startIndex: index);
+
+    player.setNowPlayingOpen(true);
+    player.play();
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      builder: (_) {
+        return ChangeNotifierProvider.value(
+          value: player,
+          child: const NowPlaying(),
+        );
+      },
     );
+
+    player.setNowPlayingOpen(false);
   }
 
   Future<void> _confirmDeleteSong(Song song) async {
@@ -142,7 +156,7 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
   Widget build(BuildContext context) {
     final playlist = widget.playlist;
 
-    return Scaffold(
+    return BaseScaffold(
       appBar: AppBar(
         title: Text(
           playlist.name,
@@ -160,131 +174,164 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
               children: [
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: playlist.hasServerImage
+                      ? Image.network(
+                    playlist.fullImageUrl,
+                    width: 180,
+                    height: 180,
+                    fit: BoxFit.cover,
+                  )
+                      : Image.asset(
+                    playlist.fullImageUrl,
+                    width: 180,
+                    height: 180,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  playlist.name,
+                  style: const TextStyle(
+                    fontFamily: 'SF Pro',
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  widget.username,
+                  style: const TextStyle(color: Colors.grey),
+                ),
+                const SizedBox(height: 12),
+                ElevatedButton(
+                  onPressed: _navigateToAddSong,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    side: const BorderSide(color: Colors.black12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 10,
+                    ),
+                  ),
+                  child: const Text(
+                    "Thêm bài hát vào playlist",
+                    style: TextStyle(
+                      fontFamily: 'SF Pro',
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(),
+          Expanded(
+            child: _songs.isEmpty
+                ? const Center(
+              child: Text(
+                "Không có bài hát trong playlist của bạn",
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.grey),
+              ),
+            )
+                : ListView.builder(
+              itemCount: _songs.length,
+              itemBuilder: (context, index) {
+                final song = _songs[index];
+                return ListTile(
+                  leading: Stack(
+                    alignment: Alignment.center,
                     children: [
                       ClipRRect(
                         borderRadius: BorderRadius.circular(12),
-                        child: playlist.hasServerImage
-                            ? Image.network(
-                                playlist.fullImageUrl,
-                                width: 180,
-                                height: 180,
-                                fit: BoxFit.cover,
-                              )
-                            : Image.asset(
-                                playlist.fullImageUrl,
-                                width: 180,
-                                height: 180,
+                        child: FadeInImage.assetNetwork(
+                          placeholder: 'assets/musical_note.jpg',
+                          image: song.image,
+                          width: 56,
+                          height: 56,
+                          fit: BoxFit.cover,
+                          imageErrorBuilder:
+                              (context, error, stackTrace) =>
+                              Image.asset(
+                                'assets/musical_note.jpg',
+                                width: 56,
+                                height: 56,
                                 fit: BoxFit.cover,
                               ),
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        playlist.name,
-                        style: const TextStyle(
-                          fontFamily: 'SF Pro',
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                      Text(
-                        widget.username,
-                        style: const TextStyle(color: Colors.grey),
+                      // Chart khi đang phát
+                      Consumer<PlayerProvider>(
+                        builder: (context, player, _) {
+                          final isCurrent =
+                              player.currentSong?.id == song.id;
+                          final isPlaying =
+                              isCurrent && player.isPlaying;
+                          return isPlaying
+                              ? const PlayingIndicator(
+                            isPlaying: true,
+                          )
+                              : const SizedBox();
+                        },
                       ),
-                      const SizedBox(height: 12),
-                      ElevatedButton(
-                        onPressed: _navigateToAddSong,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          side: const BorderSide(color: Colors.black12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 10,
-                          ),
-                        ),
-                        child: const Text(
-                          "Thêm bài hát vào playlist",
-                          style: TextStyle(
-                            fontFamily: 'SF Pro',
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
+                    ],
+                  ),
+                  title: Text(
+                    song.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  subtitle: Text(song.artist),
+                  onTap: () => _openNowPlaying(index),
+                  trailing: PopupMenuButton<String>(
+                    icon: const Icon(
+                      Icons.more_vert,
+                      color: Colors.black,
+                    ),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    onSelected: (value) {
+                      if (value == 'delete') {
+                        _confirmDeleteSong(song);
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.delete,
+                              color: Colors.red,
+                              size: 20,
+                            ),
+                            SizedBox(width: 8),
+                            Text("Xóa khỏi playlist"),
+                          ],
                         ),
                       ),
                     ],
                   ),
-                ),
-                const Divider(),
-                Expanded(
-                  child: _songs.isEmpty
-                      ? const Center(
-                          child: Text(
-                            "Không có bài hát trong playlist của bạn",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.grey),
-                          ),
-                        )
-                      : ListView.builder(
-                          itemCount: _songs.length,
-                          itemBuilder: (context, index) {
-                            final song = _songs[index];
-                            return ListTile(
-                              leading: CircleAvatar(
-                                radius: 28,
-                                backgroundImage: NetworkImage(song.image),
-                                onBackgroundImageError: (_, __) {},
-                              ),
-                              title: Text(
-                                song.title,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              subtitle: Text(song.artist),
-                              onTap: () => _openNowPlaying(index),
-                              trailing: PopupMenuButton<String>(
-                                icon: const Icon(
-                                  Icons.more_vert,
-                                  color: Colors.black,
-                                ),
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                onSelected: (value) {
-                                  if (value == 'delete') {
-                                    _confirmDeleteSong(song);
-                                  }
-                                },
-                                itemBuilder: (context) => [
-                                  const PopupMenuItem(
-                                    value: 'delete',
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.delete,
-                                          color: Colors.red,
-                                          size: 20,
-                                        ),
-                                        SizedBox(width: 8),
-                                        Text("Xóa khỏi playlist"),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
-                ),
-              ],
+                );
+              },
             ),
+          ),
+        ],
+      ),
+      withBottomNav: true,
     );
   }
 }
