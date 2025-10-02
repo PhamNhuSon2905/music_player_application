@@ -16,6 +16,15 @@ class PlayerProvider extends ChangeNotifier {
 
   bool _isShuffle = false;
 
+  // ✅ Thêm để quản lý trạng thái NowPlaying
+  bool _isNowPlayingOpen = false;
+  bool get isNowPlayingOpen => _isNowPlayingOpen;
+
+  void setNowPlayingOpen(bool value) {
+    _isNowPlayingOpen = value;
+    notifyListeners();
+  }
+
   Song? get currentSong => _currentSong;
   bool get isPlaying => _player.playing;
   bool get isShuffle => _isShuffle;
@@ -82,6 +91,7 @@ class PlayerProvider extends ChangeNotifier {
     await _player.setAudioSource(_playlist!, initialIndex: startIndex);
     _currentSong = songs[startIndex];
     notifyListeners();
+    play();
   }
 
   /// Next Song

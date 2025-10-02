@@ -46,6 +46,10 @@ dependencies:
   provider: ^6.1.5
   audio_service: ^0.18.12
   just_audio_background: ^0.0.1-beta.17
+  marquee: ^2.2.3
+  palette_generator: ^0.3.3
+  cached_network_image: ^3.3.1
+  blur: ^3.1.0
 
 dev_dependencies:
   flutter_test:

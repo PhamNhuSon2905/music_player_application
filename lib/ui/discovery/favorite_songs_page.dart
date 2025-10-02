@@ -4,6 +4,8 @@ import 'package:music_player_application/data/repository/favorite_song_repositor
 import 'package:music_player_application/service/token_storage.dart';
 import 'package:music_player_application/ui/now_playing/playing.dart';
 import 'package:provider/provider.dart';
+import '../../widgets/base_scaffold.dart';
+import '../../widgets/playing_indicator.dart';
 import '../providers/player_provider.dart';
 
 class FavoriteSongsPage extends StatefulWidget {
@@ -49,20 +51,36 @@ class _FavoriteSongsPageState extends State<FavoriteSongsPage> {
     }
   }
 
-  void _openNowPlaying(int index) {
-    context.read<PlayerProvider>().setQueue(favoriteSongs, startIndex: index);
+  Future<void> _openNowPlaying(int index) async {
+    final player = context.read<PlayerProvider>();
+    await player.setQueue(favoriteSongs, startIndex: index);
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const NowPlaying()),
-    ).then((_) {
-      loadFavorites();
-    });
+    // Ẩn MiniPlayer
+    player.setNowPlayingOpen(true);
+    player.play();
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      builder: (_) {
+        return ChangeNotifierProvider.value(
+          value: player,
+          child: const NowPlaying(),
+        );
+      },
+    );
+
+    // Hiện lại MiniPlayer khi đóng
+    player.setNowPlayingOpen(false);
+
+    // reload lại danh sách yêu thích
+    await loadFavorites();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return BaseScaffold(
       appBar: AppBar(
         title: const Text('Bài hát yêu thích của bạn'),
         backgroundColor: Colors.white,
@@ -74,16 +92,17 @@ class _FavoriteSongsPageState extends State<FavoriteSongsPage> {
           : favoriteSongs.isEmpty
           ? const Center(child: Text('Không có bài hát yêu thích nào.'))
           : ListView.builder(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              itemCount: favoriteSongs.length,
-              itemBuilder: (context, index) {
-                final song = favoriteSongs[index];
-                return SongTile(
-                  song: song,
-                  onTap: () => _openNowPlaying(index),
-                );
-              },
-            ),
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        itemCount: favoriteSongs.length,
+        itemBuilder: (context, index) {
+          final song = favoriteSongs[index];
+          return SongTile(
+            song: song,
+            onTap: () => _openNowPlaying(index),
+          );
+        },
+      ),
+      withBottomNav: true,
     );
   }
 }
@@ -96,27 +115,80 @@ class SongTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      leading: ClipOval(
-        child: FadeInImage.assetNetwork(
-          placeholder: 'assets/musical_note.jpg',
-          image: song.image,
-          width: 56,
-          height: 56,
-          fit: BoxFit.cover,
-          imageErrorBuilder: (_, __, ___) =>
-              Image.asset('assets/musical_note.jpg', width: 56, height: 56),
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            // Ảnh + chart overlay
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: (song.image.isEmpty || !song.image.startsWith("http"))
+                      ? Image.asset(
+                    'assets/musical_note.jpg',
+                    width: 56,
+                    height: 56,
+                    fit: BoxFit.cover,
+                  )
+                      : Image.network(
+                    song.image,
+                    width: 56,
+                    height: 56,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Image.asset(
+                      'assets/musical_note.jpg',
+                      width: 56,
+                      height: 56,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+                // Chart nhảy nhảy khi bài này đang phát
+                Consumer<PlayerProvider>(
+                  builder: (context, player, _) {
+                    final isCurrent = player.currentSong?.id == song.id;
+                    final isPlaying = isCurrent && player.isPlaying;
+                    return isPlaying
+                        ? const PlayingIndicator(isPlaying: true)
+                        : const SizedBox();
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(width: 16),
+
+            // Thông tin bài hát
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    song.title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                      color: Colors.black87,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    song.artist,
+                    style: const TextStyle(fontSize: 14, color: Colors.grey),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
-      title: Text(
-        song.title,
-        style: const TextStyle(fontWeight: FontWeight.bold),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
-      subtitle: Text(song.artist, maxLines: 1, overflow: TextOverflow.ellipsis),
-      onTap: onTap,
     );
   }
 }

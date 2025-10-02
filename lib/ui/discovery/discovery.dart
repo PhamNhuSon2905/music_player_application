@@ -11,7 +11,8 @@ import 'package:music_player_application/ui/playlist/create_playlist_page.dart';
 import 'package:music_player_application/ui/playlist/update_playlist_page.dart';
 import 'genre_view_model.dart';
 //banner_slider
-import 'widgets/banner_slider.dart';
+import 'banners/banner_slider.dart';
+
 
 class DiscoveryTab extends StatefulWidget {
   const DiscoveryTab({super.key});

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:music_player_application/ui/discovery/discovery.dart';
 import 'package:music_player_application/ui/home/viewmodel.dart';
+import 'package:music_player_application/ui/mini_player/mini_player.dart';
 import 'package:music_player_application/ui/now_playing/playing.dart';
 import 'package:music_player_application/ui/settings/settings.dart';
 import 'package:music_player_application/ui/user/user.dart';
 import 'package:provider/provider.dart';
 import '../../data/model/song.dart';
+import '../../widgets/playing_indicator.dart';
 import '../providers/player_provider.dart';
 
 class MusicApp extends StatelessWidget {
@@ -17,7 +19,7 @@ class MusicApp extends StatelessWidget {
       title: 'Music App',
       theme: ThemeData(
         fontFamily: "SF Pro",
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.grey),
         useMaterial3: true,
         scaffoldBackgroundColor: Colors.white,
         textTheme: const TextTheme(
@@ -48,33 +50,11 @@ class _MusicHomePageState extends State<MusicHomePage> {
     const AccountTab(),
     const SettingsTab(),
   ];
-  bool _hasShownLoginMessage = false;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final message = ModalRoute.of(context)?.settings.arguments as String?;
-    if (!_hasShownLoginMessage && message != null) {
-      _hasShownLoginMessage = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(message),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-            margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      });
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
+    final player = context.watch<PlayerProvider>();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -91,17 +71,38 @@ class _MusicHomePageState extends State<MusicHomePage> {
         centerTitle: true,
       ),
       body: _tabs[_currentIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        selectedItemColor: Colors.deepPurple,
-        unselectedItemColor: Colors.grey,
-        type: BottomNavigationBarType.fixed,
-        onTap: (index) => setState(() => _currentIndex = index),
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.library_music), label: 'Thư Viện'),
-          BottomNavigationBarItem(icon: Icon(Icons.explore), label: 'Khám Phá'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Cá Nhân'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Cài Đặt'),
+
+      // MiniPlayer + BottomNavBar gộp chung
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (player.currentSong != null && !player.isNowPlayingOpen)
+            const MiniPlayer(),
+          BottomNavigationBar(
+            currentIndex: _currentIndex,
+            selectedItemColor: Colors.deepPurple,
+            unselectedItemColor: Colors.grey,
+            type: BottomNavigationBarType.fixed,
+            onTap: (index) => setState(() => _currentIndex = index),
+            items: const [
+              BottomNavigationBarItem(
+                icon: Icon(Icons.library_music_rounded),
+                label: 'Thư Viện',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.explore_rounded),
+                label: 'Khám Phá',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.person_rounded),
+                label: 'Cá Nhân',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.settings_rounded),
+                label: 'Cài Đặt',
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -110,12 +111,14 @@ class _MusicHomePageState extends State<MusicHomePage> {
 
 class HomeTab extends StatelessWidget {
   const HomeTab({super.key});
+
   @override
   Widget build(BuildContext context) => const HomeTabPage();
 }
 
 class HomeTabPage extends StatefulWidget {
   const HomeTabPage({super.key});
+
   @override
   State<HomeTabPage> createState() => _HomeTabPageState();
 }
@@ -191,14 +194,17 @@ class _HomeTabPageState extends State<HomeTabPage> {
         decoration: InputDecoration(
           hintText: 'Tìm kiếm bài hát, ca sĩ...',
           hintStyle: const TextStyle(color: Colors.grey, fontSize: 15),
-          prefixIcon: const Icon(Icons.search, size: 22, color: Colors.grey),
+          prefixIcon: const Icon(Icons.search_rounded, size: 22, color: Colors.grey),
           suffixIcon: _searchController.text.isNotEmpty
               ? IconButton(
-            icon: const Icon(Icons.clear, size: 20, color: Colors.grey),
-            onPressed: _onSearchCleared,
-          )
+                  icon: const Icon(Icons.clear_rounded, size: 20, color: Colors.grey),
+                  onPressed: _onSearchCleared,
+                )
               : null,
-          contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
+          contentPadding: const EdgeInsets.symmetric(
+            vertical: 0,
+            horizontal: 12,
+          ),
           filled: true,
           fillColor: Colors.grey.shade100,
           border: OutlineInputBorder(
@@ -228,9 +234,8 @@ class _HomeTabPageState extends State<HomeTabPage> {
     );
   }
 
-  Widget getProgressBar() => const Center(
-    child: CircularProgressIndicator(color: Colors.deepPurple),
-  );
+  Widget getProgressBar() =>
+      const Center(child: CircularProgressIndicator(color: Colors.deepPurple));
 
   Widget getListView() {
     return ListView.builder(
@@ -251,33 +256,35 @@ class _HomeTabPageState extends State<HomeTabPage> {
         padding: const EdgeInsets.all(16),
         decoration: const BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text("Tùy chọn",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const Text(
+              "Tùy chọn",
+              style: TextStyle(fontSize: 18, fontFamily: "SF Pro", fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 16),
             ListTile(
-              leading: const Icon(Icons.playlist_add),
+              leading: const Icon(Icons.playlist_add_rounded),
               title: const Text('Thêm vào playlist'),
               onTap: () => Navigator.pop(context),
             ),
             ListTile(
-              leading: const Icon(Icons.download),
+              leading: const Icon(Icons.download_rounded),
               title: const Text('Tải xuống'),
               onTap: () => Navigator.pop(context),
             ),
             ListTile(
-              leading: const Icon(Icons.share),
+              leading: const Icon(Icons.share_rounded),
               title: const Text('Chia sẻ'),
               onTap: () => Navigator.pop(context),
             ),
             const Divider(),
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Đóng', style: TextStyle(color: Colors.red)),
+              child: const Text('Đóng', style: TextStyle(fontSize: 18, fontFamily: "SF Pro", fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -285,13 +292,26 @@ class _HomeTabPageState extends State<HomeTabPage> {
     );
   }
 
-  void navigate(int index) {
-    context.read<PlayerProvider>().setQueue(filteredSongs, startIndex: index);
+  void navigate(int index) async {
+    final player = context.read<PlayerProvider>();
+    await player.setQueue(filteredSongs, startIndex: index);
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => NowPlaying()),
+    // Mở NowPlaying full sheet + ẩn mini
+    player.setNowPlayingOpen(true);
+    player.play();
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      builder: (context) {
+        // dùng lại PlayerProvider
+        return ChangeNotifierProvider.value(
+          value: player,
+          child: const NowPlaying(),
+        );
+      },
     );
+    player.setNowPlayingOpen(false);
   }
 
   @override
@@ -304,6 +324,7 @@ class _SongItemSection extends StatelessWidget {
     required this.onTap,
     required this.onMoreTap,
   });
+
   final Song song;
   final VoidCallback onTap;
   final VoidCallback onMoreTap;
@@ -316,23 +337,42 @@ class _SongItemSection extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: FadeInImage.assetNetwork(
-                placeholder: 'assets/musical_note.jpg',
-                image: song.image,
-                width: 56,
-                height: 56,
-                fit: BoxFit.cover,
-                imageErrorBuilder: (context, error, stackTrace) => Image.asset(
-                  'assets/musical_note.jpg',
-                  width: 56,
-                  height: 56,
-                  fit: BoxFit.cover,
+            // Ảnh bài hát + Chart overlay
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: FadeInImage.assetNetwork(
+                    placeholder: 'assets/musical_note.jpg',
+                    image: song.image,
+                    width: 56,
+                    height: 56,
+                    fit: BoxFit.cover,
+                    imageErrorBuilder: (context, error, stackTrace) =>
+                        Image.asset(
+                          'assets/musical_note.jpg',
+                          width: 56,
+                          height: 56,
+                          fit: BoxFit.cover,
+                        ),
+                  ),
                 ),
-              ),
+                // Chart hiển thị khi bài này đang phát
+                Consumer<PlayerProvider>(
+                  builder: (context, player, _) {
+                    final isCurrent = player.currentSong?.id == song.id;
+                    final isPlaying = isCurrent && player.isPlaying;
+                    return isPlaying
+                        ? const PlayingIndicator(isPlaying: true)
+                        : const SizedBox();
+                  },
+                ),
+              ],
             ),
             const SizedBox(width: 16),
+
+            // Thông tin bài hát
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -342,7 +382,8 @@ class _SongItemSection extends StatelessWidget {
                     style: const TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 16,
-                      color: Colors.black87,
+                      fontFamily: "SF Pro",
+                      color: Colors.black,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -350,15 +391,17 @@ class _SongItemSection extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     song.artist,
-                    style: const TextStyle(fontSize: 14, color: Colors.grey),
+                    style: const TextStyle(fontSize: 14,fontFamily: "SF Pro" , color: Colors.black),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
             ),
+
+            // Nút more
             IconButton(
-              icon: const Icon(Icons.more_horiz, color: Colors.grey),
+              icon: const Icon(Icons.more_horiz, color: Colors.black),
               onPressed: onMoreTap,
             ),
           ],

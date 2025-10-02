@@ -159,10 +159,29 @@ class _AddSongToPlaylistPageState extends State<AddSongToPlaylistPage> {
                   _addedSongIds.contains(song.id);
 
                   return ListTile(
-                    leading: CircleAvatar(
-                      radius: 25,
-                      backgroundImage: NetworkImage(song.image),
-                      onBackgroundImageError: (_, __) {},
+                    leading: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: (song.image.isEmpty ||
+                          !song.image.startsWith("http"))
+                          ? Image.asset(
+                        'assets/musical_note.jpg',
+                        width: 50,
+                        height: 50,
+                        fit: BoxFit.cover,
+                      )
+                          : Image.network(
+                        song.image,
+                        width: 50,
+                        height: 50,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) =>
+                            Image.asset(
+                              'assets/musical_note.jpg',
+                              width: 50,
+                              height: 50,
+                              fit: BoxFit.cover,
+                            ),
+                      ),
                     ),
                     title: Text(
                       song.title,
@@ -173,8 +192,7 @@ class _AddSongToPlaylistPageState extends State<AddSongToPlaylistPage> {
                     trailing: alreadyAdded
                         ? const Icon(Icons.check, color: Colors.green)
                         : IconButton(
-                      icon: const Icon(
-                          Icons.add_circle_outline),
+                      icon: const Icon(Icons.add_circle_outline),
                       onPressed: () => _addSong(song),
                     ),
                   );
