@@ -67,11 +67,11 @@ class _NowPlayingState extends State<NowPlaying>
     if (imageUrl.isEmpty || !imageUrl.startsWith("http")) return;
     try {
       final PaletteGenerator generator =
-      await PaletteGenerator.fromImageProvider(
-        CachedNetworkImageProvider(imageUrl),
-        size: const Size(200, 200),
-        maximumColorCount: 10,
-      );
+          await PaletteGenerator.fromImageProvider(
+            CachedNetworkImageProvider(imageUrl),
+            size: const Size(200, 200),
+            maximumColorCount: 10,
+          );
       if (generator.dominantColor != null) {
         setState(() {
           _dominantColor = generator.dominantColor!.color;
@@ -85,12 +85,14 @@ class _NowPlayingState extends State<NowPlaying>
   Future<void> _initFavoriteState(Song song) async {
     _userId = await TokenStorage.getUserId();
     _favoriteSongRepository = FavoriteSongRepository(context);
-    final favorites =
-    await _favoriteSongRepository.fetchFavoriteSongsByUserId(_userId);
+    final favorites = await _favoriteSongRepository.fetchFavoriteSongsByUserId(
+      _userId,
+    );
     if (mounted) {
       setState(() {
-        _isFavorite =
-            favorites.any((fav) => fav.songId.toString() == song.id.toString());
+        _isFavorite = favorites.any(
+          (fav) => fav.songId.toString() == song.id.toString(),
+        );
       });
     }
   }
@@ -140,69 +142,75 @@ class _NowPlayingState extends State<NowPlaying>
     const delta = 64.0;
 
     return Scaffold(
-      extendBodyBehindAppBar: true,
       backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        toolbarHeight: 80,
-        title: const Text(
-          'Trình phát nhạc',
-          style: TextStyle(
-            fontSize: 20,
-            fontFamily: "SF Pro",
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.expand_more_outlined, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        actions: [
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.more_horiz, color: Colors.white),
-          ),
-        ],
-      ),
+      extendBodyBehindAppBar: true,
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Ảnh nền load bằng CachedNetworkImage
+          // Background ảnh
           (song.image.isEmpty || !song.image.startsWith("http"))
               ? Image.asset('assets/musical_note.jpg', fit: BoxFit.cover)
               : CachedNetworkImage(
-            imageUrl: song.image,
-            fit: BoxFit.cover,
-            placeholder: (context, url) =>
-                Container(color: Colors.black),
-            errorWidget: (context, url, error) =>
-                Image.asset('assets/musical_note.jpg',
-                    fit: BoxFit.cover),
-          ),
+                  imageUrl: song.image,
+                  fit: BoxFit.cover,
+                  placeholder: (context, url) => Container(color: Colors.black),
+                  errorWidget: (context, url, error) =>
+                      Image.asset('assets/musical_note.jpg', fit: BoxFit.cover),
+                ),
 
           // Blur overlay
           Blur(
             blur: 10,
-            blurColor: Colors.black.withOpacity(0.4),
+            blurColor: Colors.black.withValues( alpha : 0.4),
             child: Container(),
           ),
 
-          /// Nội dung
+          // Nội dung
           SafeArea(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                const SizedBox(height: 56),
+                Padding(
+                  padding: const EdgeInsets.only(top: 16, left: 16, right: 16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      IconButton(
+                        icon: const Icon(
+                          Icons.expand_more_rounded,
+                          color: Colors.white,
+                        ),
+                        iconSize: 36,
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                      const Expanded(
+                        child: Center(
+                          child: Text(
+                            'Trình phát nhạc',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontFamily: "SF Pro",
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.more_horiz_rounded, color: Colors.white),
+                        iconSize: 36,
+                        onPressed: () {},
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Album + separator
                 Text(
                   song.album.isEmpty ? "Unknown Album" : song.album,
                   style: const TextStyle(color: Colors.white),
                 ),
-                const Text('_ __ _',
-                    style: TextStyle(color: Colors.white)),
-                const SizedBox(height: 8),
+                const Text('_ __ _', style: TextStyle(color: Colors.white)),
 
                 // Đĩa nhạc xoay
                 AnimatedSwitcher(
@@ -219,17 +227,21 @@ class _NowPlayingState extends State<NowPlaying>
                       ),
                       padding: const EdgeInsets.all(2),
                       child: ClipOval(
-                        child: (song.image.isEmpty ||
-                            !song.image.startsWith("http"))
-                            ? Image.asset('assets/musical_note.jpg',
-                            fit: BoxFit.cover)
+                        child:
+                            (song.image.isEmpty ||
+                                !song.image.startsWith("http"))
+                            ? Image.asset(
+                                'assets/musical_note.jpg',
+                                fit: BoxFit.cover,
+                              )
                             : CachedNetworkImage(
-                          imageUrl: song.image,
-                          fit: BoxFit.cover,
-                          errorWidget: (_, __, ___) =>
-                              Image.asset('assets/musical_note.jpg',
-                                  fit: BoxFit.cover),
-                        ),
+                                imageUrl: song.image,
+                                fit: BoxFit.cover,
+                                errorWidget: (_, __, ___) => Image.asset(
+                                  'assets/musical_note.jpg',
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
                       ),
                     ),
                   ),
@@ -237,7 +249,7 @@ class _NowPlayingState extends State<NowPlaying>
 
                 // Tên bài hát + nghệ sĩ
                 Padding(
-                  padding: const EdgeInsets.only(top: 16, bottom: 16),
+                  padding: const EdgeInsets.only(top: 2, bottom: 2),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
@@ -257,32 +269,35 @@ class _NowPlayingState extends State<NowPlaying>
                               height: 24,
                               child: song.title.length > 20
                                   ? Marquee(
-                                text: song.title,
-                                style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white),
-                                scrollAxis: Axis.horizontal,
-                                blankSpace: 50,
-                                velocity: 30,
-                                pauseAfterRound: Duration(seconds: 1),
-                                startPadding: 10.0,
-                              )
+                                      text: song.title,
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                      scrollAxis: Axis.horizontal,
+                                      blankSpace: 50,
+                                      velocity: 30,
+                                      pauseAfterRound: Duration(seconds: 1),
+                                      startPadding: 10.0,
+                                    )
                                   : Text(
-                                song.title,
-                                style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                textAlign: TextAlign.center,
-                              ),
+                                      song.title,
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      textAlign: TextAlign.center,
+                                    ),
                             ),
-                            Text(song.artist,
-                                style:
-                                const TextStyle(color: Colors.white70),
-                                textAlign: TextAlign.center),
+                            Text(
+                              song.artist,
+                              style: const TextStyle(color: Colors.white70),
+                              textAlign: TextAlign.center,
+                            ),
                           ],
                         ),
                       ),
@@ -290,9 +305,11 @@ class _NowPlayingState extends State<NowPlaying>
                         padding: const EdgeInsets.only(right: 16),
                         child: IconButton(
                           onPressed: () => _toggleFavorite(song),
-                          icon: Icon(_isFavorite
-                              ? Icons.favorite_rounded
-                              : Icons.favorite_outline_rounded),
+                          icon: Icon(
+                            _isFavorite
+                                ? Icons.favorite_rounded
+                                : Icons.favorite_outline_rounded,
+                          ),
                           color: _isFavorite ? Colors.purple : Colors.grey,
                         ),
                       ),
@@ -306,7 +323,8 @@ class _NowPlayingState extends State<NowPlaying>
                   child: StreamBuilder<DurationState>(
                     stream: player.durationState,
                     builder: (context, snapshot) {
-                      final state = snapshot.data ??
+                      final state =
+                          snapshot.data ??
                           DurationState(
                             progress: player.player.position,
                             buffered: player.player.bufferedPosition,
@@ -319,7 +337,7 @@ class _NowPlayingState extends State<NowPlaying>
                         onSeek: player.seek,
                         barHeight: 3,
                         barCapShape: BarCapShape.round,
-                        baseBarColor: Colors.white.withOpacity(0.3),
+                        baseBarColor: Colors.white.withValues(alpha:0.3),
                         progressBarColor: Colors.white,
                         bufferedBarColor: Colors.white54,
                         thumbColor: Colors.white,
@@ -336,64 +354,153 @@ class _NowPlayingState extends State<NowPlaying>
                 Padding(
                   padding: const EdgeInsets.all(8),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      IconButton(
-                        onPressed: () =>
-                            context.read<PlayerProvider>().toggleShuffle(),
-                        icon: const Icon(Icons.shuffle_rounded),
-                        color:
-                        player.isShuffle ? Colors.deepPurple : Colors.white,
-                      ),
-                      IconButton(
-                        onPressed: () =>
-                            context.read<PlayerProvider>().prevSong(),
-                        icon: const Icon(Icons.skip_previous_rounded),
-                        iconSize: 30,
-                        color: Colors.white,
-                      ),
-                      IconButton(
-                        icon: Icon(
-                          player.isPlaying
-                              ? Icons.pause_circle_outline_rounded
-                              : Icons.play_circle_outline_rounded,
-                          size: 50,
+                      Expanded(
+                        child: Center(
+                          child: IconButton(
+                            onPressed: () =>
+                                context.read<PlayerProvider>().toggleShuffle(),
+                            icon: const Icon(Icons.shuffle_rounded),
+                            iconSize: 24,
+                            color: player.isShuffle
+                                ? Colors.deepPurple
+                                : Colors.grey,
+                          ),
                         ),
-                        onPressed: () => player.isPlaying
-                            ? player.pause()
-                            : player.play(),
-                        color: Colors.white,
                       ),
-                      IconButton(
-                        onPressed: () =>
-                            context.read<PlayerProvider>().nextSong(),
-                        icon: const Icon(Icons.skip_next_rounded),
-                        iconSize: 30,
-                        color: Colors.white,
+                      Expanded(
+                        child: Center(
+                          child: IconButton(
+                            onPressed: () =>
+                                context.read<PlayerProvider>().prevSong(),
+                            icon: const Icon(Icons.skip_previous_rounded),
+                            iconSize: 40,
+                            color: Colors.white,
+                          ),
+                        ),
                       ),
-                      IconButton(
-                        onPressed: () {
-                          final current = player.loopMode;
-                          LoopMode nextMode;
-                          switch (current) {
-                            case LoopMode.off:
-                              nextMode = LoopMode.one;
-                              break;
-                            case LoopMode.one:
-                              nextMode = LoopMode.all;
-                              break;
-                            case LoopMode.all:
-                              nextMode = LoopMode.off;
-                              break;
-                          }
-                          context
-                              .read<PlayerProvider>()
-                              .setLoopMode(nextMode);
-                        },
-                        icon: Icon(_repeatIcon(player.loopMode)),
-                        color: player.loopMode == LoopMode.off
-                            ? Colors.grey
-                            : Colors.deepPurple,
+                      Expanded(
+                        child: Center(
+                          child: IconButton(
+                            icon: Icon(
+                              player.isPlaying
+                                  ? Icons.pause_circle_outline_rounded
+                                  : Icons.play_circle_outline_rounded,
+                              size: 65,
+                            ),
+                            onPressed: () => player.isPlaying
+                                ? player.pause()
+                                : player.play(),
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Center(
+                          child: IconButton(
+                            onPressed: () =>
+                                context.read<PlayerProvider>().nextSong(),
+                            icon: const Icon(Icons.skip_next_rounded),
+                            iconSize: 40,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Center(
+                          child: IconButton(
+                            onPressed: () {
+                              final current = player.loopMode;
+                              LoopMode nextMode;
+                              switch (current) {
+                                case LoopMode.off:
+                                  nextMode = LoopMode.one;
+                                  break;
+                                case LoopMode.one:
+                                  nextMode = LoopMode.all;
+                                  break;
+                                case LoopMode.all:
+                                  nextMode = LoopMode.off;
+                                  break;
+                              }
+                              context.read<PlayerProvider>().setLoopMode(
+                                nextMode,
+                              );
+                            },
+                            icon: Icon(_repeatIcon(player.loopMode)),
+                            iconSize: 24,
+                            color: player.loopMode == LoopMode.off
+                                ? Colors.grey
+                                : Colors.deepPurple,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Cụm icon cân đối dưới cùng
+                Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Center(
+                          child: const Icon(
+                            Icons.color_lens_outlined,
+                            color: Colors.grey,
+                            size: 24,
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Center(
+                          child: const Icon(
+                            Icons.playlist_add_outlined,
+                            color: Colors.grey,
+                            size: 24,
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Center(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Text(
+                              "320 Kbps",
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Center(
+                          child: const Icon(
+                            Icons.arrow_circle_down_rounded,
+                            color: Colors.grey,
+                            size: 24,
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Center(
+                          child: const Icon(
+                            Icons.queue_music_rounded,
+                            color: Colors.grey,
+                            size: 24,
+                          ),
+                        ),
                       ),
                     ],
                   ),
