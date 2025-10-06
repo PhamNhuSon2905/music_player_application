@@ -6,20 +6,22 @@ class GenreCard extends StatelessWidget {
   final VoidCallback onTap;
 
   const GenreCard({super.key, required this.genre, required this.onTap});
+
   String _getGenreImage(String name) {
     final key = name.toLowerCase();
     if (key.contains('chill')) {
       return 'assets/card_image/Nhac_chill.jpg';
     } else if (key.contains('edm')) {
       return 'assets/card_image/Nhac_EDM.jpg';
-    } else if (key.contains('us') || key.contains('uk') || key.contains('âu mỹ')) {
+    } else if (key.contains('us') ||
+        key.contains('uk') ||
+        key.contains('âu mỹ')) {
       return 'assets/card_image/Nhac_USUK.jpg';
     } else if (key.contains('buồn')) {
       return 'assets/card_image/Nhac_buon.jpg';
     } else if (key.contains('vu lan')) {
       return 'assets/card_image/Nhac_vu_lan.jpg';
-    }
-    else if (key.contains('trẻ')) {
+    } else if (key.contains('trẻ')) {
       return 'assets/card_image/Nhac_viet.jpg';
     } else if (key.contains('trữ tình')) {
       return 'assets/card_image/Nhac_tru_tinh.jpg';
@@ -27,7 +29,6 @@ class GenreCard extends StatelessWidget {
       return 'assets/card_image/V_pop_nhac_viet.jpg';
     }
   }
-
 
   @override
   Widget build(BuildContext context) {

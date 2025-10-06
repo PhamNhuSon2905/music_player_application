@@ -9,6 +9,7 @@ class GenreRemoteDataSource {
 
   GenreRemoteDataSource(BuildContext context) : _client = ApiClient(context);
 
+  // Lấy tất cả các thể loại bài hát đang có
   Future<List<Genre>> fetchAllGenres() async {
     try {
       final response = await _client.get('/api/genres');
@@ -27,7 +28,7 @@ class GenreRemoteDataSource {
       return [];
     }
   }
-
+  // lấy các bài hát theo mã thể loại
   Future<List<Song>> fetchSongsByGenreId(int genreId) async {
     try {
       final response = await _client.get('/api/genres/$genreId/songs');

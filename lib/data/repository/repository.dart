@@ -15,17 +15,20 @@ class DefaultRepository implements Repository {
       : _remoteDataSource = RemoteDataSource(context);
 
   @override
+  // load toàn bộ bài hát
   Future<List<Song>?> loadData() async {
     final remoteSongs = await _remoteDataSource.loadData();
     return remoteSongs;
   }
 
   @override
+  // lấy bài hát theo id
   Future<Song?> getSongById(String id) {
     return _remoteDataSource.getSongById(id);
   }
 
   @override
+  // tìm kiếm bài hát
   Future<List<Song>> searchSongs(String keyword) {
     return _remoteDataSource.searchSongs(keyword);
   }

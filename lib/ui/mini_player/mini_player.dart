@@ -4,9 +4,9 @@ import 'package:marquee/marquee.dart';
 import '../../widgets/playing_indicator.dart';
 import '../providers/player_provider.dart';
 import '../../data/model/song.dart';
-import '../now_playing/playing.dart';
 import '../../data/repository/favorite_song_repository.dart';
 import '../../service/token_storage.dart';
+import '../../utils/toast_helper.dart'; // ✅ thêm dòng này
 
 class MiniPlayer extends StatefulWidget {
   const MiniPlayer({super.key});
@@ -52,32 +52,21 @@ class _MiniPlayerState extends State<MiniPlayer> {
     if (_isFavorite) {
       await _favoriteSongRepository.removeFavorite(_userId!, song.id);
       if (mounted) setState(() => _isFavorite = false);
-      _showSnackBar('Đã gỡ "${song.title}" khỏi Yêu thích', false);
+      ToastHelper.show(
+        context,
+        message: 'Đã xóa bài hát khỏi Yêu thích',
+        isSuccess: false,
+      );
     } else {
       await _favoriteSongRepository.addFavorite(_userId!, song.id);
       if (mounted) setState(() => _isFavorite = true);
-      _showSnackBar('Đã thêm "${song.title}" vào Yêu thích', true);
-    }
-  }
 
-  void _showSnackBar(String message, bool isSuccess) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: isSuccess ? Colors.green : Colors.red,
-        content: Row(
-          children: [
-            Icon(
-              isSuccess ? Icons.check_circle : Icons.error,
-              color: Colors.white,
-            ),
-            const SizedBox(width: 8),
-            Expanded(child: Text(message)),
-          ],
-        ),
-        duration: const Duration(seconds: 2),
-      ),
-    );
+      ToastHelper.show(
+        context,
+        message: 'Đã thêm bài hát vào Yêu thích',
+        isSuccess: true,
+      );
+    }
   }
 
   @override
@@ -85,61 +74,45 @@ class _MiniPlayerState extends State<MiniPlayer> {
     final player = context.watch<PlayerProvider>();
     final Song? song = player.currentSong;
 
-    if (song == null || player.isNowPlayingOpen) return const SizedBox();
+    if (song == null || player.isNowPlayingOpen)
+      return const SizedBox();
 
     return GestureDetector(
-      onTap: () async {
-        player.setNowPlayingOpen(true);
-
-        await showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          backgroundColor: Colors.white,
-          builder: (context) {
-            return ChangeNotifierProvider.value(
-              value: player,
-              child: const NowPlaying(),
-            );
-          },
-        );
-
-        player.setNowPlayingOpen(false);
-      },
+      onTap: () => player.setNowPlayingOpen(true),
       child: Container(
-        height: 64,
-        margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
+        height: 68,
+        margin: const EdgeInsets.fromLTRB(12, 0, 12, 8),
         padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(12), // bo góc
+          borderRadius: BorderRadius.circular(14),
           boxShadow: const [
             BoxShadow(
               color: Colors.black12,
-              offset: Offset(0, -1), // bóng đổ nhẹ phía trên
-              blurRadius: 2,
+              offset: Offset(0, -1),
+              blurRadius: 5,
             ),
           ],
         ),
-
         child: Row(
           children: [
-            // Ảnh + hiệu ứng đang phát
+            /// Ảnh + hiệu ứng phát
             Stack(
               alignment: Alignment.center,
               children: [
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(10),
                   child: (song.image.isEmpty || !song.image.startsWith("http"))
                       ? Image.asset(
                           "assets/musical_note.jpg",
-                          width: 48,
-                          height: 48,
+                          width: 52,
+                          height: 52,
                           fit: BoxFit.cover,
                         )
                       : Image.network(
                           song.image,
-                          width: 48,
-                          height: 48,
+                          width: 52,
+                          height: 52,
                           fit: BoxFit.cover,
                         ),
                 ),
@@ -151,7 +124,7 @@ class _MiniPlayerState extends State<MiniPlayer> {
             ),
             const SizedBox(width: 12),
 
-            // Tên bài + ca sĩ
+            /// Tên bài hát + ca sĩ
             Expanded(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -165,9 +138,11 @@ class _MiniPlayerState extends State<MiniPlayer> {
                             style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
+                              fontFamily: "SF Pro",
+                              color: Colors.black,
+                              decoration: TextDecoration.none,
                             ),
-                            scrollAxis: Axis.horizontal,
-                            blankSpace: 50.0,
+                            blankSpace: 40.0,
                             velocity: 30.0,
                             pauseAfterRound: Duration(seconds: 1),
                           )
@@ -178,6 +153,9 @@ class _MiniPlayerState extends State<MiniPlayer> {
                             style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
+                              fontFamily: "SF Pro",
+                              color: Colors.black,
+                              decoration: TextDecoration.none,
                             ),
                           ),
                   ),
@@ -188,47 +166,47 @@ class _MiniPlayerState extends State<MiniPlayer> {
                     style: const TextStyle(
                       fontSize: 12,
                       fontFamily: "SF Pro",
-                      color: Colors.black,
+                      color: Colors.black54,
+                      decoration: TextDecoration.none,
                     ),
                   ),
                 ],
               ),
             ),
 
+            /// Nút điều khiển
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 GestureDetector(
                   onTap: () => _toggleFavorite(song),
-                  child: SizedBox(
-                    width: 28,
-                    height: 28,
-                    child: Icon(
-                      _isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                      color: _isFavorite ? Colors.black : Colors.black,
-                      size: 16,
-                    ),
+                  child: Icon(
+                    _isFavorite
+                        ? Icons.favorite_rounded
+                        : Icons.favorite_border_rounded,
+                    color: _isFavorite ? Colors.black : Colors.black,
+                    size: 20,
                   ),
                 ),
+                const SizedBox(width: 8),
                 GestureDetector(
                   onTap: () =>
                       player.isPlaying ? player.pause() : player.play(),
-                  child: SizedBox(
-                    width: 32,
-                    height: 32,
-                    child: Icon(
-                      player.isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                      color: Colors.black,
-                      size: 24,
-                    ),
+                  child: Icon(
+                    player.isPlaying
+                        ? Icons.pause_rounded
+                        : Icons.play_arrow_rounded,
+                    color: Colors.black,
+                    size: 26,
                   ),
                 ),
+                const SizedBox(width: 8),
                 GestureDetector(
                   onTap: () => player.nextSong(),
-                  child: const SizedBox(
-                    width: 28,
-                    height: 28,
-                    child: Icon(Icons.skip_next_rounded, color: Colors.black, size: 24),
+                  child: const Icon(
+                    Icons.skip_next_rounded,
+                    color: Colors.black,
+                    size: 24,
                   ),
                 ),
               ],

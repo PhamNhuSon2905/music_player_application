@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:music_player_application/data/model/playlist.dart';
 import 'package:music_player_application/data/model/song.dart';
 import 'package:music_player_application/service/playlist_song_service.dart';
-import 'package:music_player_application/ui/now_playing/playing.dart';
+import 'package:music_player_application/utils/toast_helper.dart'; // ✅ thêm
 import 'package:provider/provider.dart';
+import '../ui/now_playing/audio_helper.dart';
 import '../ui/providers/player_provider.dart';
-import '../widgets/base_scaffold.dart';
 import '../widgets/playing_indicator.dart';
+import '../ui/mini_player/mini_player.dart';
+import '../ui/now_playing/playing_scope.dart';
 import 'add_song_to_playlist_page.dart';
 
 class PlaylistDetailPage extends StatefulWidget {
@@ -35,37 +37,6 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
     _loadSongs();
   }
 
-  void _showSnackBar({required String message, bool isSuccess = true}) {
-    final color = isSuccess ? Colors.green : Colors.red;
-    final icon = isSuccess ? Icons.check_circle : Icons.error;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: color.withOpacity(0.9),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        content: Row(
-          children: [
-            Icon(icon, color: Colors.white),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                message,
-                style: const TextStyle(
-                  fontFamily: "SF Pro",
-                  fontSize: 14,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ],
-        ),
-        duration: const Duration(seconds: 3),
-      ),
-    );
-  }
-
   Future<void> _loadSongs() async {
     final songs = await _playlistSongService.fetchSongsByPlaylist(
       widget.playlist.id,
@@ -86,39 +57,25 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
 
     if (added == true) {
       _loadSongs();
+      ToastHelper.show(context, message: "Đã thêm bài hát mới vào playlist!");
     }
   }
 
   Future<void> _openNowPlaying(int index) async {
-    final player = context.read<PlayerProvider>();
-    await player.setQueue(_songs, startIndex: index);
-
-    player.setNowPlayingOpen(true);
-    player.play();
-
-    await showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      builder: (_) {
-        return ChangeNotifierProvider.value(
-          value: player,
-          child: const NowPlaying(),
-        );
-      },
+    AudioPlayerHelper.playSong(
+      context,
+      songs: _songs,
+      startIndex: index,
     );
-
-    player.setNowPlayingOpen(false);
   }
+
 
   Future<void> _confirmDeleteSong(Song song) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text("Xóa bài hát"),
-        content: Text(
-          "Bạn có chắc muốn xóa '${song.title}' khỏi playlist không?",
-        ),
+        content: Text("Bạn có chắc muốn xóa '${song.title}' khỏi playlist không?"),
         actions: [
           TextButton(
             child: const Text("Hủy"),
@@ -137,14 +94,17 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
         widget.playlist.id,
         song.id,
       );
+
       if (removed) {
         _loadSongs();
-        _showSnackBar(
+        ToastHelper.show(
+          context,
           message: "Đã xóa '${song.title}' khỏi playlist",
           isSuccess: true,
         );
       } else {
-        _showSnackBar(
+        ToastHelper.show(
+          context,
           message: "Xóa thất bại, vui lòng thử lại!",
           isSuccess: false,
         );
@@ -156,182 +116,232 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
   Widget build(BuildContext context) {
     final playlist = widget.playlist;
 
-    return BaseScaffold(
-      appBar: AppBar(
-        title: Text(
-          playlist.name,
-          style: const TextStyle(
-            fontFamily: 'SF Pro',
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
+    return PlayingScope(
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(
+            playlist.name,
+            style: const TextStyle(
+              fontFamily: 'SF Pro',
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
           ),
+          centerTitle: true,
+          backgroundColor: Colors.white,
+          elevation: 0,
+          foregroundColor: Colors.black,
         ),
-        centerTitle: true,
-        backgroundColor: Colors.white,
-        elevation: 0,
-        foregroundColor: Colors.black,
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
+        body: _isLoading
+            ? const Center(
+          child: CircularProgressIndicator(color: Colors.deepPurple),
+        )
+            : Stack(
+          children: [
+            /// Nội dung chính
+            Column(
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: playlist.hasServerImage
-                      ? Image.network(
-                    playlist.fullImageUrl,
-                    width: 180,
-                    height: 180,
-                    fit: BoxFit.cover,
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: playlist.hasServerImage
+                            ? Image.network(
+                          playlist.fullImageUrl,
+                          width: 180,
+                          height: 180,
+                          fit: BoxFit.cover,
+                        )
+                            : Image.asset(
+                          playlist.fullImageUrl,
+                          width: 180,
+                          height: 180,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        playlist.name,
+                        style: const TextStyle(
+                          fontFamily: 'SF Pro',
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        widget.username,
+                        style: const TextStyle(color: Colors.grey),
+                      ),
+                      const SizedBox(height: 12),
+                      ElevatedButton(
+                        onPressed: _navigateToAddSong,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          side: const BorderSide(color: Colors.black12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 10,
+                          ),
+                        ),
+                        child: const Text(
+                          "Thêm bài hát vào playlist",
+                          style: TextStyle(
+                            fontFamily: 'SF Pro',
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(),
+                Expanded(
+                  child: _songs.isEmpty
+                      ? const Center(
+                    child: Text(
+                      "Không có bài hát trong playlist của bạn",
+                      style: TextStyle(
+                        fontFamily: 'SF Pro',
+                        fontSize: 15,
+                        color: Colors.black54,
+                      ),
+                    ),
                   )
-                      : Image.asset(
-                    playlist.fullImageUrl,
-                    width: 180,
-                    height: 180,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  playlist.name,
-                  style: const TextStyle(
-                    fontFamily: 'SF Pro',
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  widget.username,
-                  style: const TextStyle(color: Colors.grey),
-                ),
-                const SizedBox(height: 12),
-                ElevatedButton(
-                  onPressed: _navigateToAddSong,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    side: const BorderSide(color: Colors.black12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 10,
-                    ),
-                  ),
-                  child: const Text(
-                    "Thêm bài hát vào playlist",
-                    style: TextStyle(
-                      fontFamily: 'SF Pro',
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
+                      : ListView.builder(
+                    padding: const EdgeInsets.only(bottom: 80),
+                    itemCount: _songs.length,
+                    itemBuilder: (context, index) {
+                      final song = _songs[index];
+                      return ListTile(
+                        leading: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            ClipRRect(
+                              borderRadius:
+                              BorderRadius.circular(12),
+                              child: FadeInImage.assetNetwork(
+                                placeholder:
+                                'assets/musical_note.jpg',
+                                image: song.image,
+                                width: 56,
+                                height: 56,
+                                fit: BoxFit.cover,
+                                imageErrorBuilder: (context, error,
+                                    stackTrace) =>
+                                    Image.asset(
+                                      'assets/musical_note.jpg',
+                                      width: 56,
+                                      height: 56,
+                                      fit: BoxFit.cover,
+                                    ),
+                              ),
+                            ),
+                            Consumer<PlayerProvider>(
+                              builder: (context, player, _) {
+                                final isCurrent =
+                                    player.currentSong?.id ==
+                                        song.id;
+                                final isPlaying = isCurrent &&
+                                    player.isPlaying;
+                                return isPlaying
+                                    ? const PlayingIndicator(
+                                  isPlaying: true,
+                                )
+                                    : const SizedBox();
+                              },
+                            ),
+                          ],
+                        ),
+                        title: Text(
+                          song.title,
+                          style: const TextStyle(
+                            fontFamily: 'SF Pro',
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        subtitle: Text(
+                          song.artist,
+                          style: const TextStyle(
+                            fontFamily: 'SF Pro',
+                            fontSize: 13,
+                            color: Colors.black54,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        onTap: () => _openNowPlaying(index),
+                        trailing: PopupMenuButton<String>(
+                          icon: const Icon(
+                            Icons.more_vert,
+                            color: Colors.black,
+                          ),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius:
+                            BorderRadius.circular(8),
+                          ),
+                          onSelected: (value) {
+                            if (value == 'delete') {
+                              _confirmDeleteSong(song);
+                            }
+                          },
+                          itemBuilder: (context) => [
+                            const PopupMenuItem(
+                              value: 'delete',
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.delete,
+                                    color: Colors.red,
+                                    size: 20,
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text("Xóa khỏi playlist"),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
                   ),
                 ),
               ],
             ),
-          ),
-          const Divider(),
-          Expanded(
-            child: _songs.isEmpty
-                ? const Center(
-              child: Text(
-                "Không có bài hát trong playlist của bạn",
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey),
+
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: Consumer<PlayerProvider>(
+                builder: (context, player, _) {
+                  if (player.currentSong == null ||
+                      player.isNowPlayingOpen) {
+                    return const SizedBox();
+                  }
+                  return Padding(
+                    padding: const EdgeInsets.only(
+                      bottom: kBottomNavigationBarHeight + 6,
+                      left: 8,
+                      right: 8,
+                    ),
+                    child: const MiniPlayer(),
+                  );
+                },
               ),
-            )
-                : ListView.builder(
-              itemCount: _songs.length,
-              itemBuilder: (context, index) {
-                final song = _songs[index];
-                return ListTile(
-                  leading: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: FadeInImage.assetNetwork(
-                          placeholder: 'assets/musical_note.jpg',
-                          image: song.image,
-                          width: 56,
-                          height: 56,
-                          fit: BoxFit.cover,
-                          imageErrorBuilder:
-                              (context, error, stackTrace) =>
-                              Image.asset(
-                                'assets/musical_note.jpg',
-                                width: 56,
-                                height: 56,
-                                fit: BoxFit.cover,
-                              ),
-                        ),
-                      ),
-                      // Chart khi đang phát
-                      Consumer<PlayerProvider>(
-                        builder: (context, player, _) {
-                          final isCurrent =
-                              player.currentSong?.id == song.id;
-                          final isPlaying =
-                              isCurrent && player.isPlaying;
-                          return isPlaying
-                              ? const PlayingIndicator(
-                            isPlaying: true,
-                          )
-                              : const SizedBox();
-                        },
-                      ),
-                    ],
-                  ),
-                  title: Text(
-                    song.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  subtitle: Text(song.artist),
-                  onTap: () => _openNowPlaying(index),
-                  trailing: PopupMenuButton<String>(
-                    icon: const Icon(
-                      Icons.more_vert,
-                      color: Colors.black,
-                    ),
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    onSelected: (value) {
-                      if (value == 'delete') {
-                        _confirmDeleteSong(song);
-                      }
-                    },
-                    itemBuilder: (context) => [
-                      const PopupMenuItem(
-                        value: 'delete',
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.delete,
-                              color: Colors.red,
-                              size: 20,
-                            ),
-                            SizedBox(width: 8),
-                            Text("Xóa khỏi playlist"),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-      withBottomNav: true,
     );
   }
 }

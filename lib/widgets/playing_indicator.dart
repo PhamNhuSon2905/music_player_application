@@ -18,7 +18,7 @@ class _PlayingIndicatorState extends State<PlayingIndicator>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2000), // tốc độ vừa phải
+      duration: const Duration(milliseconds: 2000),
     )..repeat();
   }
 
@@ -49,7 +49,7 @@ class _PlayingIndicatorState extends State<PlayingIndicator>
           children: List.generate(4, (i) {
             return Container(
               width: 3,
-              height: _sinHeight(t, i * pi / 2), // lệch pha mỗi cột
+              height: _sinHeight(t, i * pi / 2), // lệch pha cột
               margin: const EdgeInsets.symmetric(horizontal: 1.5),
               color: Colors.white,
             );

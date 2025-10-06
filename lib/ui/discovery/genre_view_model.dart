@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:music_player_application/data/model/genre.dart';
 import 'package:music_player_application/data/model/song.dart';
 import 'package:music_player_application/data/repository/genre_repository.dart';
-import 'package:music_player_application/ui/now_playing/playing.dart';
 import 'package:provider/provider.dart';
 import '../../widgets/base_scaffold.dart';
 import '../../widgets/playing_indicator.dart';
+import '../now_playing/audio_helper.dart';
 import '../providers/player_provider.dart';
+import '../now_playing/playing_scope.dart';
+import '../mini_player/mini_player.dart';
 
 class GenreSongPage extends StatefulWidget {
   final Genre genre;
@@ -46,25 +48,11 @@ class _GenreSongPageState extends State<GenreSongPage> {
   }
 
   Future<void> _openNowPlaying(int index) async {
-    final player = context.read<PlayerProvider>();
-    await player.setQueue(songs, startIndex: index);
-
-    player.setNowPlayingOpen(true);
-    player.play();
-
-    await showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      builder: (_) {
-        return ChangeNotifierProvider.value(
-          value: player,
-          child: const NowPlaying(),
-        );
-      },
+    AudioPlayerHelper.playSong(
+      context,
+      songs: songs,
+      startIndex: index,
     );
-
-    player.setNowPlayingOpen(false);
   }
 
   Widget _buildSongItem(Song song, int index) {
@@ -74,7 +62,7 @@ class _GenreSongPageState extends State<GenreSongPage> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
-            // Ảnh bài hát + Chart overlay
+            /// Ảnh bài hát + hiệu ứng Playing
             Stack(
               alignment: Alignment.center,
               children: [
@@ -100,7 +88,6 @@ class _GenreSongPageState extends State<GenreSongPage> {
                     ),
                   ),
                 ),
-                // Chart khi bài này đang phát
                 Consumer<PlayerProvider>(
                   builder: (context, player, _) {
                     final isCurrent = player.currentSong?.id == song.id;
@@ -114,7 +101,7 @@ class _GenreSongPageState extends State<GenreSongPage> {
             ),
             const SizedBox(width: 16),
 
-            // Thông tin bài hát
+            /// Thông tin bài hát
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -124,7 +111,8 @@ class _GenreSongPageState extends State<GenreSongPage> {
                     style: const TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 16,
-                      color: Colors.black87,
+                      fontFamily: "SF Pro",
+                      color: Colors.black,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -132,7 +120,11 @@ class _GenreSongPageState extends State<GenreSongPage> {
                   const SizedBox(height: 4),
                   Text(
                     song.artist,
-                    style: const TextStyle(fontSize: 14, color: Colors.grey),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontFamily: "SF Pro",
+                      color: Colors.black54,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -140,11 +132,10 @@ class _GenreSongPageState extends State<GenreSongPage> {
               ),
             ),
 
-            // Nút more (nếu muốn thêm options sau này)
             IconButton(
               icon: const Icon(Icons.more_horiz, color: Colors.grey),
               onPressed: () {
-                // TODO: thêm menu tuỳ chọn giống HomeTab nếu cần
+                // TODO: thêm menu tùy chọn (playlist / share / download)
               },
             ),
           ],
@@ -155,23 +146,67 @@ class _GenreSongPageState extends State<GenreSongPage> {
 
   @override
   Widget build(BuildContext context) {
-    return BaseScaffold(
-      appBar: AppBar(
-        title: Text(widget.genre.name),
-        centerTitle: true,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 0,
+    return PlayingScope(
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(
+            widget.genre.name,
+            style: const TextStyle(
+              fontFamily: "SF Pro",
+              fontWeight: FontWeight.w600,
+              fontSize: 18,
+              color: Colors.black,
+            ),
+          ),
+          centerTitle: true,
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          elevation: 0,
+        ),
+        body: isLoading
+            ? const Center(child: CircularProgressIndicator(color: Colors.deepPurple))
+            : songs.isEmpty
+            ? const Center(
+          child: Text(
+            "Không có bài hát nào.",
+            style: TextStyle(
+              fontFamily: "SF Pro",
+              fontSize: 15,
+              color: Colors.black54,
+            ),
+          ),
+        )
+            : Stack(
+          children: [
+            // Danh sách bài hát
+            ListView.builder(
+              padding: const EdgeInsets.only(bottom: 80),
+              itemCount: songs.length,
+              itemBuilder: (_, index) =>
+                  _buildSongItem(songs[index], index),
+            ),
+
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: Consumer<PlayerProvider>(
+                builder: (context, player, _) {
+                  if (player.currentSong == null || player.isNowPlayingOpen) {
+                    return const SizedBox();
+                  }
+                  return Padding(
+                    padding: const EdgeInsets.only(
+                      bottom: kBottomNavigationBarHeight + 6,
+                      left: 8,
+                      right: 8,
+                    ),
+                    child: const MiniPlayer(),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : songs.isEmpty
-          ? const Center(child: Text("Không có bài hát nào"))
-          : ListView.builder(
-        itemCount: songs.length,
-        itemBuilder: (_, index) => _buildSongItem(songs[index], index),
-      ),
-      withBottomNav: true,
     );
   }
 }

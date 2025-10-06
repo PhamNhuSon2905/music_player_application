@@ -8,7 +8,7 @@ class PlaylistService {
 
   PlaylistService(this.context) : _repo = PlaylistRepository(context);
 
-  /// Lấy tất cả playlist theo userId
+  // Lấy tất cả playlist theo userId
   Future<List<Playlist>> fetchPlaylistsByUser(int userId) async {
     try {
       return await _repo.fetchPlaylistsByUser(userId);
@@ -18,7 +18,7 @@ class PlaylistService {
     }
   }
 
-  /// Tạo playlist mới
+  // Tạo playlist mới
   Future<Playlist?> createPlaylist(String name, String? imagePath, int userId) async {
     try {
       final playlist = await _repo.createPlaylist(name, imagePath, userId);
@@ -29,7 +29,7 @@ class PlaylistService {
     }
   }
 
-  /// Xóa playlist
+  // Xóa playlist
   Future<bool> deletePlaylist(int playlistId) async {
     try {
       await _repo.deletePlaylist(playlistId);

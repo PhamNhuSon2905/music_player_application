@@ -28,15 +28,9 @@ class MusicAppViewModel {
     }
   }
 
-  /// Tìm kiếm bài hát theo từ khóa tên bài hát, ca sĩ, album
+  // Tìm kiếm bài hát theo từ khóa tên bài hát, ca sĩ, album
   Future<List<Song>> searchSongs(String keyword, BuildContext context) async {
     final token = await TokenStorage.getToken();
-
-    if (token == null) {
-      print("Chưa đăng nhập, không thể tìm kiếm.");
-      return [];
-    }
-
     try {
       final repository = DefaultRepository(context);
       final result = await repository.searchSongs(keyword);
@@ -46,7 +40,6 @@ class MusicAppViewModel {
       return [];
     }
   }
-
   void dispose() {
     songStream.close();
   }

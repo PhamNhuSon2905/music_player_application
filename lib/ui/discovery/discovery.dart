@@ -4,15 +4,15 @@ import 'package:music_player_application/data/model/playlist.dart';
 import 'package:music_player_application/data/repository/genre_repository.dart';
 import 'package:music_player_application/data/repository/playlist_repository.dart';
 import 'package:music_player_application/service/token_storage.dart';
+import 'package:music_player_application/utils/toast_helper.dart';
 import '../../playlist_song/playlist_detail_page.dart';
 import 'favorite_songs_page.dart';
 import 'genre_card.dart';
 import 'package:music_player_application/ui/playlist/create_playlist_page.dart';
 import 'package:music_player_application/ui/playlist/update_playlist_page.dart';
 import 'genre_view_model.dart';
-//banner_slider
+// banner_slider
 import 'banners/banner_slider.dart';
-
 
 class DiscoveryTab extends StatefulWidget {
   const DiscoveryTab({super.key});
@@ -70,38 +70,6 @@ class _DiscoveryTabState extends State<DiscoveryTab> {
     setState(() {
       username = name ?? "";
     });
-  }
-
-  /// Snackbar đẹp
-  void _showSnackBar({required String message, bool isSuccess = true}) {
-    final color = isSuccess ? Colors.green : Colors.red;
-    final icon = isSuccess ? Icons.check_circle : Icons.error;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: color.withOpacity(0.9),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        content: Row(
-          children: [
-            Icon(icon, color: Colors.white),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                message,
-                style: const TextStyle(
-                  fontFamily: "SF Pro",
-                  fontSize: 14,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ],
-        ),
-        duration: const Duration(seconds: 3),
-      ),
-    );
   }
 
   @override
@@ -232,13 +200,8 @@ class _DiscoveryTabState extends State<DiscoveryTab> {
                         builder: (_) => const CreatePlaylistPage(),
                       ),
                     );
-
-                    if (newPlaylist != null) {
-                      _loadPlaylists();
-                      _showSnackBar(
-                        message: "Đã tạo playlist thành công!",
-                        isSuccess: true,
-                      );
+                    if (newPlaylist != null){
+                      await _loadPlaylists();
                     }
                   },
                   child: Padding(
@@ -319,7 +282,6 @@ class _DiscoveryTabState extends State<DiscoveryTab> {
                         ),
                       ),
                       const SizedBox(width: 12),
-
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -345,22 +307,17 @@ class _DiscoveryTabState extends State<DiscoveryTab> {
                           ],
                         ),
                       ),
-
                       PopupMenuButton<String>(
                         color: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                         elevation: 4,
-                        icon: const Icon(
-                          Icons.more_vert,
-                          color: Colors.black87,
-                        ),
+                        icon: const Icon(Icons.more_vert, color: Colors.black87),
                         onSelected: (value) async {
                           final repo = PlaylistRepository(context);
                           if (value == "edit") {
-                            final updatedPlaylist =
-                            await Navigator.push(
+                            final updatedPlaylist = await Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (_) => UpdatePlaylistPage(
@@ -368,12 +325,8 @@ class _DiscoveryTabState extends State<DiscoveryTab> {
                                 ),
                               ),
                             );
-                            if (updatedPlaylist != null) {
-                              _loadPlaylists();
-                              _showSnackBar(
-                                message: "Đã cập nhật playlist!",
-                                isSuccess: true,
-                              );
+                            if (updatedPlaylist != null){
+                              await _loadPlaylists();
                             }
                           } else if (value == "delete") {
                             final confirm = await showDialog<bool>(
@@ -385,13 +338,11 @@ class _DiscoveryTabState extends State<DiscoveryTab> {
                                 ),
                                 actions: [
                                   TextButton(
-                                    onPressed: () =>
-                                        Navigator.pop(ctx, false),
+                                    onPressed: () => Navigator.pop(ctx, false),
                                     child: const Text("Hủy"),
                                   ),
                                   TextButton(
-                                    onPressed: () =>
-                                        Navigator.pop(ctx, true),
+                                    onPressed: () => Navigator.pop(ctx, true),
                                     child: const Text(
                                       "Xóa",
                                       style: TextStyle(color: Colors.red),
@@ -405,14 +356,15 @@ class _DiscoveryTabState extends State<DiscoveryTab> {
                               try {
                                 await repo.deletePlaylist(playlist.id);
                                 _loadPlaylists();
-                                _showSnackBar(
-                                  message:
-                                  "Đã xóa playlist '${playlist.name}'",
+                                ToastHelper.show(
+                                  context,
+                                  message: "Đã xóa playlist '${playlist.name}'",
                                   isSuccess: true,
                                 );
                               } catch (e) {
                                 if (mounted) {
-                                  _showSnackBar(
+                                  ToastHelper.show(
+                                    context,
                                     message:
                                     "Không thể xóa playlist. Vui lòng thử lại!",
                                     isSuccess: false,

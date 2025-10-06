@@ -3,6 +3,7 @@ import 'package:music_player_application/data/model/playlist.dart';
 import 'package:music_player_application/data/model/song.dart';
 import 'package:music_player_application/data/repository/repository.dart';
 import 'package:music_player_application/service/playlist_song_service.dart';
+import 'package:music_player_application/utils/toast_helper.dart'; // ✅ thêm dòng này
 
 class AddSongToPlaylistPage extends StatefulWidget {
   final Playlist playlist;
@@ -30,37 +31,6 @@ class _AddSongToPlaylistPageState extends State<AddSongToPlaylistPage> {
     _playlistSongService = PlaylistSongService(context);
     _songRepository = DefaultRepository(context);
     _loadSongs();
-  }
-
-  void _showSnackBar({required String message, bool isSuccess = true}) {
-    final color = isSuccess ? Colors.green : Colors.red;
-    final icon = isSuccess ? Icons.check_circle : Icons.error;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: color.withOpacity(0.9),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        content: Row(
-          children: [
-            Icon(icon, color: Colors.white),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                message,
-                style: const TextStyle(
-                  fontFamily: "SF Pro",
-                  fontSize: 14,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ],
-        ),
-        duration: const Duration(seconds: 2),
-      ),
-    );
   }
 
   Future<void> _loadSongs() async {
@@ -100,9 +70,17 @@ class _AddSongToPlaylistPageState extends State<AddSongToPlaylistPage> {
       setState(() {
         _addedSongIds.add(song.id);
       });
-      _showSnackBar(message: "Đã thêm '${song.title}' vào playlist!");
+      ToastHelper.show(
+        context,
+        message: "Đã thêm '${song.title}' vào playlist!",
+        isSuccess: true,
+      );
     } else {
-      _showSnackBar(message: "Thêm bài hát thất bại!", isSuccess: false);
+      ToastHelper.show(
+        context,
+        message: "Thêm bài hát thất bại!",
+        isSuccess: false,
+      );
     }
   }
 
@@ -115,10 +93,14 @@ class _AddSongToPlaylistPageState extends State<AddSongToPlaylistPage> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: const Text("Thêm bài hát vào playlist"),
+          title: const Text(
+            "Thêm bài hát vào playlist",
+            style: TextStyle(fontFamily: 'SF Pro'),
+          ),
           backgroundColor: Colors.white,
           foregroundColor: Colors.black,
           centerTitle: true,
+          elevation: 0,
         ),
         body: Column(
           children: [
@@ -150,13 +132,21 @@ class _AddSongToPlaylistPageState extends State<AddSongToPlaylistPage> {
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : _filteredSongs.isEmpty
-                  ? const Center(child: Text("Không tìm thấy bài hát nào"))
+                  ? const Center(
+                child: Text(
+                  "Không tìm thấy bài hát nào",
+                  style: TextStyle(
+                    fontFamily: 'SF Pro',
+                    fontSize: 15,
+                    color: Colors.black54,
+                  ),
+                ),
+              )
                   : ListView.builder(
                 itemCount: _filteredSongs.length,
                 itemBuilder: (context, index) {
                   final song = _filteredSongs[index];
-                  final alreadyAdded =
-                  _addedSongIds.contains(song.id);
+                  final alreadyAdded = _addedSongIds.contains(song.id);
 
                   return ListTile(
                     leading: ClipRRect(
@@ -185,10 +175,21 @@ class _AddSongToPlaylistPageState extends State<AddSongToPlaylistPage> {
                     ),
                     title: Text(
                       song.title,
+                      style: const TextStyle(
+                        fontFamily: 'SF Pro',
+                        fontWeight: FontWeight.w600,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    subtitle: Text(song.artist),
+                    subtitle: Text(
+                      song.artist,
+                      style: const TextStyle(
+                        fontFamily: 'SF Pro',
+                        fontSize: 13,
+                        color: Colors.black54,
+                      ),
+                    ),
                     trailing: alreadyAdded
                         ? const Icon(Icons.check, color: Colors.green)
                         : IconButton(

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:music_player_application/data/repository/playlist_repository.dart';
 import 'package:music_player_application/service/token_storage.dart';
+import 'package:music_player_application/utils/toast_helper.dart';
 
 class CreatePlaylistPage extends StatefulWidget {
   const CreatePlaylistPage({super.key});
@@ -28,7 +29,11 @@ class _CreatePlaylistPageState extends State<CreatePlaylistPage> {
   Future<void> _createPlaylist() async {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
-      _showSnackBar(message: "Vui lòng nhập tên playlist!", isSuccess: false);
+      ToastHelper.show(
+        context,
+        message: "Vui lòng nhập tên playlist!",
+        isSuccess: false,
+      );
       return;
     }
 
@@ -44,51 +49,22 @@ class _CreatePlaylistPageState extends State<CreatePlaylistPage> {
 
       if (mounted) {
         Navigator.pop(context, playlist);
-        _showSnackBar(
+        ToastHelper.show(
+          context,
           message: "Tạo playlist \"${playlist.name}\" thành công!",
           isSuccess: true,
         );
+
       }
     } catch (e) {
       if (mounted) {
-        _showSnackBar(
+        ToastHelper.show(
+          context,
           message: "Không thể tạo playlist. Vui lòng thử lại!",
           isSuccess: false,
         );
       }
     }
-  }
-
-  /// Snackbar đẹp
-  void _showSnackBar({required String message, bool isSuccess = true}) {
-    final color = isSuccess ? Colors.green : Colors.red;
-    final icon = isSuccess ? Icons.check_circle : Icons.error;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: color.withOpacity(0.9),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        content: Row(
-          children: [
-            Icon(icon, color: Colors.white),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                message,
-                style: const TextStyle(
-                  fontFamily: "SF Pro",
-                  fontSize: 14,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ],
-        ),
-        duration: const Duration(seconds: 3),
-      ),
-    );
   }
 
   @override
@@ -169,7 +145,7 @@ class _CreatePlaylistPageState extends State<CreatePlaylistPage> {
           ),
           const SizedBox(height: 30),
 
-          // Button
+          // Nút tạo
           ElevatedButton(
             onPressed: canSubmit ? _createPlaylist : null,
             style: ElevatedButton.styleFrom(

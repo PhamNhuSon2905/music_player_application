@@ -6,21 +6,26 @@ class PlaylistRepository {
   final PlaylistRemoteDataSource remoteDataSource;
 
   PlaylistRepository(BuildContext context)
-      : remoteDataSource = PlaylistRemoteDataSource(context);
-
+    : remoteDataSource = PlaylistRemoteDataSource(context);
+  // lấy playlist theo người dùng
   Future<List<Playlist>> fetchPlaylistsByUser(int userId) {
     return remoteDataSource.fetchPlaylistsByUser(userId);
   }
-
+  // tạo playlist
   Future<Playlist> createPlaylist(String name, String? imagePath, int userId) {
     return remoteDataSource.createPlaylist(name, imagePath, userId);
   }
-
+  // xóa playlist
   Future<void> deletePlaylist(int playlistId) {
     return remoteDataSource.deletePlaylist(playlistId);
   }
-  Future<Playlist> updatePlaylist(int playlistId, String name, String? imagePath, int userId) {
+  // cập nhật playlist
+  Future<Playlist> updatePlaylist(
+    int playlistId,
+    String name,
+    String? imagePath,
+    int userId,
+  ) {
     return remoteDataSource.updatePlaylist(playlistId, name, imagePath, userId);
   }
-
 }

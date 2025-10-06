@@ -2,13 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:music_player_application/ui/discovery/discovery.dart';
 import 'package:music_player_application/ui/home/viewmodel.dart';
 import 'package:music_player_application/ui/mini_player/mini_player.dart';
-import 'package:music_player_application/ui/now_playing/playing.dart';
+import 'package:music_player_application/ui/now_playing/playing_scope.dart';
 import 'package:music_player_application/ui/settings/settings.dart';
 import 'package:music_player_application/ui/user/user.dart';
+import 'package:music_player_application/utils/toast_helper.dart'; // ✅ thêm helper toast
 import 'package:provider/provider.dart';
 import '../../data/model/song.dart';
 import '../../widgets/playing_indicator.dart';
+import '../now_playing/audio_helper.dart';
 import '../providers/player_provider.dart';
+import 'dart:async';
 
 class MusicApp extends StatelessWidget {
   const MusicApp({super.key});
@@ -44,66 +47,80 @@ class MusicHomePage extends StatefulWidget {
 class _MusicHomePageState extends State<MusicHomePage> {
   int _currentIndex = 0;
 
-  final List<Widget> _tabs = [
-    const HomeTab(),
-    const DiscoveryTab(),
-    const AccountTab(),
-    const SettingsTab(),
+  final List<Widget> _tabs = const [
+    HomeTab(),
+    DiscoveryTab(),
+    AccountTab(),
+    SettingsTab(),
   ];
 
   @override
   Widget build(BuildContext context) {
-    final player = context.watch<PlayerProvider>();
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Music App',
-          style: TextStyle(
-            fontFamily: "SF Pro",
-            fontWeight: FontWeight.w600,
-            fontSize: 20,
+    return PlayingScope(
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text(
+            'Music App',
+            style: TextStyle(
+              fontFamily: "SF Pro",
+              fontWeight: FontWeight.w600,
+              fontSize: 20,
+            ),
           ),
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          elevation: 0,
+          centerTitle: true,
         ),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 0,
-        centerTitle: true,
-      ),
-      body: _tabs[_currentIndex],
+        body: Stack(
+          children: [
+            _tabs[_currentIndex],
 
-      // MiniPlayer + BottomNavBar gộp chung
-      bottomNavigationBar: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (player.currentSong != null && !player.isNowPlayingOpen)
-            const MiniPlayer(),
-          BottomNavigationBar(
-            currentIndex: _currentIndex,
-            selectedItemColor: Colors.deepPurple,
-            unselectedItemColor: Colors.grey,
-            type: BottomNavigationBarType.fixed,
-            onTap: (index) => setState(() => _currentIndex = index),
-            items: const [
-              BottomNavigationBarItem(
-                icon: Icon(Icons.library_music_rounded),
-                label: 'Thư Viện',
+
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: Consumer<PlayerProvider>(
+                builder: (context, player, _) {
+                  if (player.currentSong == null || player.isNowPlayingOpen) {
+                    return const SizedBox();
+                  }
+
+                  return AnimatedOpacity(
+                    opacity: player.isPlaying ? 1 : 0.9,
+                    duration: const Duration(milliseconds: 300),
+                    child: const MiniPlayer(),
+                  );
+
+                },
               ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.explore_rounded),
-                label: 'Khám Phá',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.person_rounded),
-                label: 'Cá Nhân',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.settings_rounded),
-                label: 'Cài Đặt',
-              ),
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
+        bottomNavigationBar: BottomNavigationBar(
+          currentIndex: _currentIndex,
+          selectedItemColor: Colors.deepPurple,
+          unselectedItemColor: Colors.grey,
+          type: BottomNavigationBarType.fixed,
+          onTap: (index) => setState(() => _currentIndex = index),
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.library_music_rounded),
+              label: 'Thư Viện',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.explore_rounded),
+              label: 'Khám Phá',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.person_rounded),
+              label: 'Cá Nhân',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.settings_rounded),
+              label: 'Cài Đặt',
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -179,9 +196,17 @@ class _HomeTabPageState extends State<HomeTabPage> {
   Future<void> _searchSongs(String keyword) async {
     try {
       final result = await _viewModel.searchSongs(keyword, context);
-      if (mounted) setState(() => filteredSongs = result);
+      if (mounted) {
+        if (result.isEmpty) {
+          ToastHelper.show(context, message: "Không tìm thấy kết quả nào", isSuccess: false);
+        }
+        setState(() => filteredSongs = result);
+      }
     } catch (e) {
-      if (mounted) setState(() => filteredSongs = []);
+      if (mounted) {
+        ToastHelper.show(context, message: "Lỗi tìm kiếm: $e", isSuccess: false);
+        setState(() => filteredSongs = []);
+      }
     }
   }
 
@@ -197,14 +222,11 @@ class _HomeTabPageState extends State<HomeTabPage> {
           prefixIcon: const Icon(Icons.search_rounded, size: 22, color: Colors.grey),
           suffixIcon: _searchController.text.isNotEmpty
               ? IconButton(
-                  icon: const Icon(Icons.clear_rounded, size: 20, color: Colors.grey),
-                  onPressed: _onSearchCleared,
-                )
+            icon: const Icon(Icons.clear_rounded, size: 20, color: Colors.grey),
+            onPressed: _onSearchCleared,
+          )
               : null,
-          contentPadding: const EdgeInsets.symmetric(
-            vertical: 0,
-            horizontal: 12,
-          ),
+          contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
           filled: true,
           fillColor: Colors.grey.shade100,
           border: OutlineInputBorder(
@@ -243,12 +265,12 @@ class _HomeTabPageState extends State<HomeTabPage> {
       itemBuilder: (context, index) => _SongItemSection(
         song: filteredSongs[index],
         onTap: () => navigate(index),
-        onMoreTap: () => showBottomSheet(),
+        onMoreTap: () => showBottomSheet(filteredSongs[index]),
       ),
     );
   }
 
-  void showBottomSheet() {
+  void showBottomSheet(Song song) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -269,22 +291,34 @@ class _HomeTabPageState extends State<HomeTabPage> {
             ListTile(
               leading: const Icon(Icons.playlist_add_rounded),
               title: const Text('Thêm vào playlist'),
-              onTap: () => Navigator.pop(context),
+              onTap: () {
+                Navigator.pop(context);
+                ToastHelper.show(context, message: "Đã thêm vào playlist", isSuccess: true);
+              },
             ),
             ListTile(
               leading: const Icon(Icons.download_rounded),
               title: const Text('Tải xuống'),
-              onTap: () => Navigator.pop(context),
+              onTap: () {
+                Navigator.pop(context);
+                ToastHelper.show(context, message: "Đang tải xuống...", isSuccess: true);
+              },
             ),
             ListTile(
               leading: const Icon(Icons.share_rounded),
               title: const Text('Chia sẻ'),
-              onTap: () => Navigator.pop(context),
+              onTap: () {
+                Navigator.pop(context);
+                ToastHelper.show(context, message: "Đã sao chép link bài hát", isSuccess: true);
+              },
             ),
             const Divider(),
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Đóng', style: TextStyle(fontSize: 18, fontFamily: "SF Pro", fontWeight: FontWeight.bold)),
+              child: const Text(
+                'Đóng',
+                style: TextStyle(fontSize: 18, fontFamily: "SF Pro", fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         ),
@@ -292,26 +326,12 @@ class _HomeTabPageState extends State<HomeTabPage> {
     );
   }
 
-  void navigate(int index) async {
-    final player = context.read<PlayerProvider>();
-    await player.setQueue(filteredSongs, startIndex: index);
-
-    // Mở NowPlaying full sheet + ẩn mini
-    player.setNowPlayingOpen(true);
-    player.play();
-    await showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      builder: (context) {
-        // dùng lại PlayerProvider
-        return ChangeNotifierProvider.value(
-          value: player,
-          child: const NowPlaying(),
-        );
-      },
+  void navigate(int index) {
+    AudioPlayerHelper.playSong(
+      context,
+      songs: filteredSongs,
+      startIndex: index,
     );
-    player.setNowPlayingOpen(false);
   }
 
   @override
@@ -337,7 +357,6 @@ class _SongItemSection extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
-            // Ảnh bài hát + Chart overlay
             Stack(
               alignment: Alignment.center,
               children: [
@@ -349,16 +368,14 @@ class _SongItemSection extends StatelessWidget {
                     width: 56,
                     height: 56,
                     fit: BoxFit.cover,
-                    imageErrorBuilder: (context, error, stackTrace) =>
-                        Image.asset(
-                          'assets/musical_note.jpg',
-                          width: 56,
-                          height: 56,
-                          fit: BoxFit.cover,
-                        ),
+                    imageErrorBuilder: (context, error, stackTrace) => Image.asset(
+                      'assets/musical_note.jpg',
+                      width: 56,
+                      height: 56,
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
-                // Chart hiển thị khi bài này đang phát
                 Consumer<PlayerProvider>(
                   builder: (context, player, _) {
                     final isCurrent = player.currentSong?.id == song.id;
@@ -371,8 +388,6 @@ class _SongItemSection extends StatelessWidget {
               ],
             ),
             const SizedBox(width: 16),
-
-            // Thông tin bài hát
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -391,15 +406,13 @@ class _SongItemSection extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     song.artist,
-                    style: const TextStyle(fontSize: 14,fontFamily: "SF Pro" , color: Colors.black),
+                    style: const TextStyle(fontSize: 14, fontFamily: "SF Pro", color: Colors.black),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
             ),
-
-            // Nút more
             IconButton(
               icon: const Icon(Icons.more_horiz, color: Colors.black),
               onPressed: onMoreTap,

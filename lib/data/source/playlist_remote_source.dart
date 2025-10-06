@@ -9,7 +9,7 @@ class PlaylistRemoteDataSource {
 
   PlaylistRemoteDataSource(BuildContext context) : _client = ApiClient(context);
 
-  /// Lấy danh sách playlist theo userId
+  // Lấy danh sách playlist theo userId
   Future<List<Playlist>> fetchPlaylistsByUser(int userId) async {
     try {
       final response = await _client.get('/api/playlists/user/$userId');
@@ -29,16 +29,19 @@ class PlaylistRemoteDataSource {
     }
   }
 
-  // Tạo playlist mới (có hoặc không có ảnh)
-  Future<Playlist> createPlaylist(String name, String? imagePath, int userId) async {
+  // Tạo playlist mới
+  Future<Playlist> createPlaylist(
+    String name,
+    String? imagePath,
+    int userId,
+  ) async {
     try {
-      final fields = {
-        'name': name,
-        'userId': userId.toString(),
-      };
+      final fields = {'name': name, 'userId': userId.toString()};
 
       // Nếu người dùng không chọn ảnh thì null cho ảnh default
-      final File? file = (imagePath != null && imagePath.isNotEmpty) ? File(imagePath) : null;
+      final File? file = (imagePath != null && imagePath.isNotEmpty)
+          ? File(imagePath)
+          : null;
 
       final response = await _client.uploadFile(
         '/api/playlists',
@@ -59,14 +62,18 @@ class PlaylistRemoteDataSource {
     }
   }
 
-
-  Future<Playlist> updatePlaylist(int playlistId, String name, String? imagePath, int userId) async {
+  // update
+  Future<Playlist> updatePlaylist(
+    int playlistId,
+    String name,
+    String? imagePath,
+    int userId,
+  ) async {
     try {
-      final fields = {
-        'name': name,
-        'userId': userId.toString(),
-      };
-      final File? file = (imagePath != null && imagePath.isNotEmpty) ? File(imagePath) : null;
+      final fields = {'name': name, 'userId': userId.toString()};
+      final File? file = (imagePath != null && imagePath.isNotEmpty)
+          ? File(imagePath)
+          : null;
 
       final response = await _client.uploadFile(
         '/api/playlists/$playlistId',
@@ -88,9 +95,7 @@ class PlaylistRemoteDataSource {
     }
   }
 
-
-
-  // Xóa playlist theo ID
+  // Xóa playlist theo Id
   Future<void> deletePlaylist(int playlistId) async {
     try {
       final response = await _client.delete('/api/playlists/$playlistId');

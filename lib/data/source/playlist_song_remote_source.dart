@@ -9,9 +9,9 @@ class PlaylistSongRemoteDataSource {
   final ApiClient _client;
 
   PlaylistSongRemoteDataSource(BuildContext context)
-      : _client = ApiClient(context);
+    : _client = ApiClient(context);
 
-  /// Lấy danh sách bài hát trong playlist
+  // Lấy danh sách bài hát trong playlist
   Future<List<Song>> fetchSongsByPlaylist(int playlistId) async {
     try {
       final response = await _client.get('/api/playlist-songs/$playlistId');
@@ -34,15 +34,12 @@ class PlaylistSongRemoteDataSource {
     }
   }
 
-  /// Thêm bài hát vào playlist
+  // Thêm bài hát vào playlist
   Future<void> addSongToPlaylist(int playlistId, String songId) async {
     try {
       final response = await _client.post(
         '/api/playlist-songs',
-        body: {
-          "playlistId": playlistId,
-          "songId": songId,
-        },
+        body: {"playlistId": playlistId, "songId": songId},
       );
 
       if (response.statusCode != 200 && response.statusCode != 201) {
@@ -52,11 +49,13 @@ class PlaylistSongRemoteDataSource {
       throw Exception("Exception addSongToPlaylist: $e");
     }
   }
-// Xóa bài hát khỏi playlist
+
+  // Xóa bài hát khỏi playlist
   Future<void> removeSongFromPlaylist(int playlistId, String songId) async {
     try {
-      final response =
-      await _client.delete('/api/playlist-songs/$playlistId/$songId');
+      final response = await _client.delete(
+        '/api/playlist-songs/$playlistId/$songId',
+      );
 
       if (response.statusCode != 200 && response.statusCode != 204) {
         throw Exception("Xóa bài hát khỏi playlist thất bại: ${response.body}");
@@ -65,5 +64,4 @@ class PlaylistSongRemoteDataSource {
       throw Exception("Exception removeSongFromPlaylist: $e");
     }
   }
-
 }
