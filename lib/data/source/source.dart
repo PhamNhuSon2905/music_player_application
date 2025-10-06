@@ -11,7 +11,9 @@ class RemoteDataSource implements DataSource {
   final ApiClient _client;
 
   RemoteDataSource(BuildContext context) : _client = ApiClient(context);
+
   @override
+  // load danh sách bài hát
   Future<List<Song>?> loadData() async {
     try {
       final response = await _client.get('/api/songs');
@@ -36,6 +38,7 @@ class RemoteDataSource implements DataSource {
     }
   }
 
+  // lấy bài hát theo id
   Future<Song?> getSongById(String id) async {
     try {
       final response = await _client.get('/api/songs/$id');
@@ -54,6 +57,7 @@ class RemoteDataSource implements DataSource {
     }
   }
 
+  // tìm kiếm bài hát
   Future<List<Song>> searchSongs(String keyword) async {
     try {
       final response = await _client.get(

@@ -13,10 +13,7 @@ class PlayerProvider extends ChangeNotifier {
   Song? _currentSong;
   List<Song> _queue = [];
   int _currentIndex = 0;
-
   bool _isShuffle = false;
-
-  // ✅ Thêm để quản lý trạng thái NowPlaying
   bool _isNowPlayingOpen = false;
   bool get isNowPlayingOpen => _isNowPlayingOpen;
 
@@ -43,7 +40,7 @@ class PlayerProvider extends ChangeNotifier {
       ),
     ).asBroadcastStream();
 
-    // Lắng nghe sự thay đổi index (update currentSong)
+    // 🟢 Lắng nghe khi đổi bài
     _player.currentIndexStream.listen((index) {
       if (index != null && index >= 0 && index < _queue.length) {
         _currentIndex = index;
@@ -52,19 +49,26 @@ class PlayerProvider extends ChangeNotifier {
       }
     });
 
-    // Khi bài hát kết thúc
+    // 🟢 Lắng nghe khi trạng thái phát thay đổi (Play/Pause)
+    _player.playingStream.listen((isPlaying) {
+      notifyListeners(); // => giúp icon play/pause đổi đúng
+    });
+
+    // 🟢 Lắng nghe khi player chuyển trạng thái (đang load, xong, lỗi, v.v.)
     _player.playerStateStream.listen((state) async {
       if (state.processingState == ProcessingState.completed) {
         if (_player.loopMode == LoopMode.off) {
           await _player.stop();
-          notifyListeners();
+        } else if (_player.loopMode == LoopMode.all) {
+          await nextSong();
         }
-        // LoopMode.one và LoopMode.all đã được just_audio tự xử lý
       }
+      notifyListeners(); // => cập nhật lại UI
     });
   }
 
-  /// Set queue
+
+  // Set queue
   Future<void> setQueue(List<Song> songs, {int startIndex = 0}) async {
     _queue = songs;
     _currentIndex = startIndex;
@@ -94,7 +98,7 @@ class PlayerProvider extends ChangeNotifier {
     play();
   }
 
-  /// Next Song
+  // Next bài
   Future<void> nextSong() async {
     if (_queue.isEmpty) return;
 
@@ -109,11 +113,19 @@ class PlayerProvider extends ChangeNotifier {
       _currentIndex = (_currentIndex + 1) % _queue.length;
       await _player.seek(Duration.zero, index: _currentIndex);
     }
+    if (!_player.playing) {
+      await _player.play();
+    }
   }
 
-  /// Previous Song
   Future<void> prevSong() async {
     if (_queue.isEmpty) return;
+    final currentPosition = _player.position;
+    if (currentPosition > const Duration(seconds: 5)) {
+      await _player.seek(Duration.zero);
+      await _player.play();
+      return;
+    }
 
     if (_isShuffle) {
       int prevIndex = _currentIndex;
@@ -126,13 +138,18 @@ class PlayerProvider extends ChangeNotifier {
       _currentIndex = (_currentIndex - 1 + _queue.length) % _queue.length;
       await _player.seek(Duration.zero, index: _currentIndex);
     }
+    if (!_player.playing) {
+      await _player.play();
+    }
   }
 
+  // Phát
   void play() {
     _player.play();
     notifyListeners();
   }
 
+  // Dừng
   void pause() {
     _player.pause();
     notifyListeners();
@@ -144,11 +161,11 @@ class PlayerProvider extends ChangeNotifier {
 
   void toggleShuffle() {
     _isShuffle = !_isShuffle;
-    _player.setShuffleModeEnabled(false);
+    _player.setShuffleModeEnabled(_isShuffle);
     notifyListeners();
   }
 
-  /// Set Repeat mode (off, one, all)
+  // Set Repeat mode (tắt, lặp một bài, lặp toàn bộ)
   void setLoopMode(LoopMode mode) {
     _player.setLoopMode(mode);
     notifyListeners();

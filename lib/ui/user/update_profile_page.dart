@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:music_player_application/data/model/user.dart';
 import 'package:music_player_application/service/user_service.dart';
+import 'package:music_player_application/utils/toast_helper.dart';
 
 class UpdateProfilePage extends StatefulWidget {
   final User user;
@@ -42,23 +43,10 @@ class _UpdateProfilePageState extends State<UpdateProfilePage> {
   Future<void> _submit() async {
     if (_formKey.currentState!.validate()) {
       if (_gender == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text(
-              "Vui lòng chọn giới tính",
-              style: TextStyle(
-                fontFamily: 'SF Pro',
-                fontWeight: FontWeight.w500,
-                color: Colors.white,
-              ),
-            ),
-            backgroundColor: Theme.of(context).colorScheme.error,
-            behavior: SnackBarBehavior.floating,
-            margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            duration: const Duration(seconds: 3),
-            elevation: 8,
-          ),
+        ToastHelper.show(
+          context,
+          message: "Vui lòng chọn giới tính!",
+          isSuccess: false,
         );
         return;
       }
@@ -78,43 +66,21 @@ class _UpdateProfilePageState extends State<UpdateProfilePage> {
       final userService = UserService(context);
       final success = await userService.updateProfile(updatedUser);
 
-      if (context.mounted) {
-        if (success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              backgroundColor: Colors.green,
-              behavior: SnackBarBehavior.floating,
-              duration: Duration(seconds: 3),
-              content: Row(
-                children: [
-                  Icon(Icons.check_circle, color: Colors.white),
-                  SizedBox(width: 6),
-                  Expanded(child: Text('Cập nhật thông tin thành công!', style: TextStyle(color: Colors.white))),
-                ],
-              ),
-            ),
-          );
-          Navigator.pop(context, true);
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text(
-                "Cập nhật thất bại, thử lại sau",
-                style: TextStyle(
-                  fontFamily: 'SF Pro',
-                  fontWeight: FontWeight.w500,
-                  color: Colors.white,
-                ),
-              ),
-              backgroundColor: Theme.of(context).colorScheme.error,
-              behavior: SnackBarBehavior.floating,
-              margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              duration: const Duration(seconds: 3),
-              elevation: 8,
-            ),
-          );
-        }
+      if (!mounted) return;
+
+      if (success) {
+        ToastHelper.show(
+          context,
+          message: "Cập nhật thông tin thành công!",
+          isSuccess: true,
+        );
+        Navigator.pop(context, true);
+      } else {
+        ToastHelper.show(
+          context,
+          message: "Cập nhật thất bại, vui lòng thử lại sau.",
+          isSuccess: false,
+        );
       }
     }
   }
@@ -151,7 +117,7 @@ class _UpdateProfilePageState extends State<UpdateProfilePage> {
                         controller: _fullnameController,
                         decoration: InputDecoration(
                           labelText: "Họ tên",
-                          labelStyle: TextStyle(
+                          labelStyle: const TextStyle(
                             fontSize: 14,
                             color: CupertinoColors.systemGrey,
                             fontFamily: 'SF Pro',
@@ -186,7 +152,7 @@ class _UpdateProfilePageState extends State<UpdateProfilePage> {
                         controller: _emailController,
                         decoration: InputDecoration(
                           labelText: "Email",
-                          labelStyle: TextStyle(
+                          labelStyle: const TextStyle(
                             fontSize: 14,
                             color: CupertinoColors.systemGrey,
                             fontFamily: 'SF Pro',
@@ -228,7 +194,7 @@ class _UpdateProfilePageState extends State<UpdateProfilePage> {
                         controller: _phoneController,
                         decoration: InputDecoration(
                           labelText: "Số điện thoại",
-                          labelStyle: TextStyle(
+                          labelStyle: const TextStyle(
                             fontSize: 14,
                             color: CupertinoColors.systemGrey,
                             fontFamily: 'SF Pro',
@@ -273,7 +239,7 @@ class _UpdateProfilePageState extends State<UpdateProfilePage> {
                         controller: _addressController,
                         decoration: InputDecoration(
                           labelText: "Địa chỉ",
-                          labelStyle: TextStyle(
+                          labelStyle: const TextStyle(
                             fontSize: 14,
                             color: CupertinoColors.systemGrey,
                             fontFamily: 'SF Pro',
@@ -323,7 +289,7 @@ class _UpdateProfilePageState extends State<UpdateProfilePage> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
+                                  const Text(
                                     "Giới tính",
                                     style: TextStyle(
                                       fontSize: 14,
@@ -340,15 +306,8 @@ class _UpdateProfilePageState extends State<UpdateProfilePage> {
                                         onChanged: (value) => setState(() => _gender = value),
                                         activeColor: theme.colorScheme.primary,
                                       ),
-                                      Text(
-                                        "Nam",
-                                        style: TextStyle(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w500,
-                                          fontFamily: 'SF Pro',
-                                          color: theme.textTheme.bodyLarge?.color,
-                                        ),
-                                      ),
+                                      const Text("Nam",
+                                          style: TextStyle(fontFamily: 'SF Pro')),
                                       const SizedBox(width: 16),
                                       Radio<bool>(
                                         value: false,
@@ -356,15 +315,8 @@ class _UpdateProfilePageState extends State<UpdateProfilePage> {
                                         onChanged: (value) => setState(() => _gender = value),
                                         activeColor: theme.colorScheme.primary,
                                       ),
-                                      Text(
-                                        "Nữ",
-                                        style: TextStyle(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w500,
-                                          fontFamily: 'SF Pro',
-                                          color: theme.textTheme.bodyLarge?.color,
-                                        ),
-                                      ),
+                                      const Text("Nữ",
+                                          style: TextStyle(fontFamily: 'SF Pro')),
                                     ],
                                   ),
                                 ],
@@ -377,7 +329,8 @@ class _UpdateProfilePageState extends State<UpdateProfilePage> {
                       Center(
                         child: ElevatedButton.icon(
                           onPressed: _submit,
-                          icon: Icon(Icons.save, color: theme.colorScheme.onPrimary, size: 20),
+                          icon: Icon(Icons.save,
+                              color: theme.colorScheme.onPrimary, size: 20),
                           label: Text(
                             "Lưu thay đổi",
                             style: TextStyle(

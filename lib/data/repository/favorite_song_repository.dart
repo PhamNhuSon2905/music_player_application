@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:music_player_application/data/model/favorite_song.dart';
-
 import '../model/song.dart';
 import '../source/favorite_song_remote_source.dart';
-
 
 class FavoriteSongRepository {
   final FavoriteSongRemoteDataSource remoteDataSource;
 
   FavoriteSongRepository(BuildContext context)
-      : remoteDataSource = FavoriteSongRemoteDataSource(context);
+    : remoteDataSource = FavoriteSongRemoteDataSource(context);
 
+  // lấy danh sách bài hát yêu thích theo userId
   Future<List<FavoriteSong>> fetchFavoriteSongsByUserId(int userId) async {
     return await remoteDataSource.fetchFavoritesByUser(userId);
   }
@@ -30,12 +29,11 @@ class FavoriteSongRepository {
       });
     }).toList();
   }
-
-
+  // Thêm bài hát vào danh sách yêu thích
   Future<void> addFavorite(int userId, String songId) async {
     await remoteDataSource.addFavorite(userId, songId);
   }
-
+  // xóa bài hát khỏi danh sách yêu thích
   Future<void> removeFavorite(int userId, String songId) async {
     await remoteDataSource.removeFavorite(userId, songId);
   }

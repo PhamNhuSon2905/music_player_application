@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:music_player_application/data/model/user.dart';
 import 'package:music_player_application/service/user_service.dart';
+import 'package:music_player_application/utils/toast_helper.dart';
 import 'update_profile_page.dart';
 
 class AccountTab extends StatefulWidget {
@@ -26,7 +27,7 @@ class _AccountTabState extends State<AccountTab> {
   Future<void> _loadUser() async {
     final userService = UserService(context);
     final user = await userService.getCurrentUser();
-    if (user != null) {
+    if (user != null && mounted) {
       setState(() {
         _currentUser = user;
       });
@@ -44,32 +45,19 @@ class _AccountTabState extends State<AccountTab> {
           _avatar = imageFile;
         });
         _loadUser();
-        _showSnackBar("Ảnh đại diện đã cập nhật thành công!", Colors.green.shade600);
+        ToastHelper.show(
+          context,
+          message: "Ảnh đại diện đã cập nhật thành công!",
+          isSuccess: true,
+        );
       } else {
-        _showSnackBar("Lỗi khi tải ảnh đại diện!", Colors.redAccent.shade200);
+        ToastHelper.show(
+          context,
+          message: "Lỗi khi tải ảnh đại diện!",
+          isSuccess: false,
+        );
       }
     }
-  }
-
-  void _showSnackBar(String message, Color color) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          message,
-          style: const TextStyle(
-            fontFamily: 'SF Pro',
-            fontWeight: FontWeight.w500,
-            color: Colors.white,
-          ),
-        ),
-        backgroundColor: color,
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        duration: const Duration(seconds: 3),
-        elevation: 8,
-      ),
-    );
   }
 
   @override
@@ -293,27 +281,24 @@ class _AccountTabState extends State<AccountTab> {
               final userService = UserService(context);
               final success = await userService.logout();
               if (success) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    backgroundColor: Colors.green,
-                    behavior: SnackBarBehavior.floating,
-                    duration: Duration(seconds: 3),
-                    content: Row(
-                      children: [
-                        Icon(Icons.check_circle, color: Colors.white),
-                        SizedBox(width: 6),
-                        Expanded(child: Text('Đăng xuất tài khoản thành công!', style: TextStyle(color: Colors.white))),
-                      ],
-                    ),
-                  ),
+                ToastHelper.show(
+                  context,
+                  message: "Đăng xuất tài khoản thành công!",
+                  isSuccess: true,
                 );
                 await Future.delayed(const Duration(seconds: 1));
                 Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+              } else {
+                ToastHelper.show(
+                  context,
+                  message: "Không thể đăng xuất, vui lòng thử lại!",
+                  isSuccess: false,
+                );
               }
             }
           },
-          icon: const Icon(Icons.logout, color: Colors.red),
-          label: const Text('Đăng xuất', style: TextStyle(color: Colors.red)),
+          icon: const Icon(Icons.logout, color: Colors.black),
+          label: const Text('Đăng xuất', style: TextStyle(color: Colors.black)),
         ),
       ],
     );

@@ -118,7 +118,7 @@ class ApiClient {
         File? file,
         Map<String, String>? fields,
         String fileField = "file",
-        String method = "POST", // thêm tham số method, mặc định POST
+        String method = "POST",
       }) async {
     final uri = Uri.parse('$baseUrl$path');
     final token = await TokenStorage.getToken();
@@ -128,7 +128,7 @@ class ApiClient {
     print('[UPLOAD $method] Token: $token');
     print('[UPLOAD $method] Fields: $fields');
 
-    final request = http.MultipartRequest(method, uri)  // sử dụng method
+    final request = http.MultipartRequest(method, uri)
       ..headers.addAll({
         if (token != null) 'Authorization': 'Bearer $token',
         'Accept': 'application/json',
@@ -161,10 +161,10 @@ class ApiClient {
       if (body.contains('JWT expired') ||
           body.contains('Invalid JWT') ||
           body.contains('Full authentication is required')) {
-        print('[ApiClient] ❌ Token expired or invalid – Logging out...');
+        print('[ApiClient] Token expired or invalid – Logging out...');
         await AuthService.logout(context);
       } else {
-        print('[ApiClient] ⚠️ 401 but not JWT-related, no logout');
+        print('[ApiClient] 401 but not JWT-related, no logout');
       }
     }
   }

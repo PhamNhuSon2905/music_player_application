@@ -10,6 +10,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../data/model/song.dart';
 import '../../data/repository/favorite_song_repository.dart';
 import '../../service/token_storage.dart';
+import '../../utils/toast_helper.dart';
 import '../providers/player_provider.dart';
 import 'audio_player_manager.dart';
 
@@ -36,10 +37,8 @@ class _NowPlayingState extends State<NowPlaying>
     super.initState();
     final player = context.read<PlayerProvider>();
 
-    _imageAnimController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 20),
-    );
+    _imageAnimController =
+        AnimationController(vsync: this, duration: const Duration(seconds: 20));
 
     _manager = AudioPlayerManager(
       provider: player,
@@ -67,15 +66,13 @@ class _NowPlayingState extends State<NowPlaying>
     if (imageUrl.isEmpty || !imageUrl.startsWith("http")) return;
     try {
       final PaletteGenerator generator =
-          await PaletteGenerator.fromImageProvider(
-            CachedNetworkImageProvider(imageUrl),
-            size: const Size(200, 200),
-            maximumColorCount: 10,
-          );
+      await PaletteGenerator.fromImageProvider(
+        CachedNetworkImageProvider(imageUrl),
+        size: const Size(200, 200),
+        maximumColorCount: 10,
+      );
       if (generator.dominantColor != null) {
-        setState(() {
-          _dominantColor = generator.dominantColor!.color;
-        });
+        setState(() => _dominantColor = generator.dominantColor!.color);
       }
     } catch (e) {
       debugPrint("Không lấy được palette: $e");
@@ -85,13 +82,12 @@ class _NowPlayingState extends State<NowPlaying>
   Future<void> _initFavoriteState(Song song) async {
     _userId = await TokenStorage.getUserId();
     _favoriteSongRepository = FavoriteSongRepository(context);
-    final favorites = await _favoriteSongRepository.fetchFavoriteSongsByUserId(
-      _userId,
-    );
+    final favorites =
+    await _favoriteSongRepository.fetchFavoriteSongsByUserId(_userId);
     if (mounted) {
       setState(() {
         _isFavorite = favorites.any(
-          (fav) => fav.songId.toString() == song.id.toString(),
+              (fav) => fav.songId.toString() == song.id.toString(),
         );
       });
     }
@@ -101,41 +97,23 @@ class _NowPlayingState extends State<NowPlaying>
     if (_isFavorite) {
       await _favoriteSongRepository.removeFavorite(_userId, song.id);
       if (mounted) setState(() => _isFavorite = false);
-      _showSnackBar('Đã gỡ "${song.title}" khỏi Yêu thích', false);
+      ToastHelper.show(context,
+          message: 'Đã xóa bài hát khỏi Yêu thích', isSuccess: false);
     } else {
       await _favoriteSongRepository.addFavorite(_userId, song.id);
       if (mounted) setState(() => _isFavorite = true);
-      _showSnackBar('Đã thêm "${song.title}" vào Yêu thích', true);
+      ToastHelper.show(context,
+          message: 'Đã thêm bài hát vào Yêu thích', isSuccess: true);
     }
-  }
-
-  void _showSnackBar(String message, bool isSuccess) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: isSuccess ? Colors.green : Colors.red,
-        content: Row(
-          children: [
-            Icon(
-              isSuccess ? Icons.check_circle : Icons.error,
-              color: Colors.white,
-            ),
-            const SizedBox(width: 8),
-            Expanded(child: Text(message)),
-          ],
-        ),
-        duration: const Duration(seconds: 2),
-      ),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
     final player = context.watch<PlayerProvider>();
     final Song? song = player.currentSong;
-
     if (song == null) {
-      return const Scaffold(body: Center(child: Text("Chưa chọn bài hát nào")));
+      return const Scaffold(
+          body: Center(child: Text("Chưa chọn bài hát nào")));
     }
 
     final screenWidth = MediaQuery.of(context).size.width;
@@ -147,41 +125,42 @@ class _NowPlayingState extends State<NowPlaying>
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Background ảnh
+          /// Background
           (song.image.isEmpty || !song.image.startsWith("http"))
               ? Image.asset('assets/musical_note.jpg', fit: BoxFit.cover)
               : CachedNetworkImage(
-                  imageUrl: song.image,
-                  fit: BoxFit.cover,
-                  placeholder: (context, url) => Container(color: Colors.black),
-                  errorWidget: (context, url, error) =>
-                      Image.asset('assets/musical_note.jpg', fit: BoxFit.cover),
-                ),
+            imageUrl: song.image,
+            fit: BoxFit.cover,
+            placeholder: (_, __) => Container(color: Colors.black),
+            errorWidget: (_, __, ___) =>
+                Image.asset('assets/musical_note.jpg', fit: BoxFit.cover),
+          ),
 
-          // Blur overlay
+          /// Blur overlay
           Blur(
-            blur: 10,
-            blurColor: Colors.black.withValues( alpha : 0.4),
+            blur: 30,
+            blurColor: Colors.black.withOpacity(0.4),
             child: Container(),
           ),
 
-          // Nội dung
+          /// UI Content
           SafeArea(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
+                /// Top Bar
                 Padding(
                   padding: const EdgeInsets.only(top: 16, left: 16, right: 16),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       IconButton(
-                        icon: const Icon(
-                          Icons.expand_more_rounded,
-                          color: Colors.white,
-                        ),
+                        icon: const Icon(Icons.expand_more_rounded,
+                            color: Colors.white),
                         iconSize: 36,
-                        onPressed: () => Navigator.pop(context),
+                        onPressed: () => context
+                            .read<PlayerProvider>()
+                            .setNowPlayingOpen(false),
                       ),
                       const Expanded(
                         child: Center(
@@ -197,7 +176,8 @@ class _NowPlayingState extends State<NowPlaying>
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.more_horiz_rounded, color: Colors.white),
+                        icon: const Icon(Icons.more_horiz_rounded,
+                            color: Colors.white),
                         iconSize: 36,
                         onPressed: () {},
                       ),
@@ -205,14 +185,13 @@ class _NowPlayingState extends State<NowPlaying>
                   ),
                 ),
 
-                // Album + separator
                 Text(
                   song.album.isEmpty ? "Unknown Album" : song.album,
                   style: const TextStyle(color: Colors.white),
                 ),
                 const Text('_ __ _', style: TextStyle(color: Colors.white)),
 
-                // Đĩa nhạc xoay
+                /// Rotating disc
                 AnimatedSwitcher(
                   duration: const Duration(milliseconds: 400),
                   child: RotationTransition(
@@ -227,27 +206,23 @@ class _NowPlayingState extends State<NowPlaying>
                       ),
                       padding: const EdgeInsets.all(2),
                       child: ClipOval(
-                        child:
-                            (song.image.isEmpty ||
-                                !song.image.startsWith("http"))
-                            ? Image.asset(
-                                'assets/musical_note.jpg',
-                                fit: BoxFit.cover,
-                              )
+                        child: (song.image.isEmpty ||
+                            !song.image.startsWith("http"))
+                            ? Image.asset('assets/musical_note.jpg',
+                            fit: BoxFit.cover)
                             : CachedNetworkImage(
-                                imageUrl: song.image,
-                                fit: BoxFit.cover,
-                                errorWidget: (_, __, ___) => Image.asset(
-                                  'assets/musical_note.jpg',
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
+                          imageUrl: song.image,
+                          fit: BoxFit.cover,
+                          errorWidget: (_, __, ___) =>
+                              Image.asset('assets/musical_note.jpg',
+                                  fit: BoxFit.cover),
+                        ),
                       ),
                     ),
                   ),
                 ),
 
-                // Tên bài hát + nghệ sĩ
+                /// Title + Artist + Favorite
                 Padding(
                   padding: const EdgeInsets.only(top: 2, bottom: 2),
                   child: Row(
@@ -263,41 +238,37 @@ class _NowPlayingState extends State<NowPlaying>
                       ),
                       Expanded(
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             SizedBox(
                               height: 24,
                               child: song.title.length > 20
                                   ? Marquee(
-                                      text: song.title,
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                      ),
-                                      scrollAxis: Axis.horizontal,
-                                      blankSpace: 50,
-                                      velocity: 30,
-                                      pauseAfterRound: Duration(seconds: 1),
-                                      startPadding: 10.0,
-                                    )
+                                text: song.title,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                                scrollAxis: Axis.horizontal,
+                                blankSpace: 50,
+                                velocity: 30,
+                                pauseAfterRound:
+                                const Duration(seconds: 1),
+                              )
                                   : Text(
-                                      song.title,
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      textAlign: TextAlign.center,
-                                    ),
+                                song.title,
+                                style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
+                              ),
                             ),
-                            Text(
-                              song.artist,
-                              style: const TextStyle(color: Colors.white70),
-                              textAlign: TextAlign.center,
-                            ),
+                            Text(song.artist,
+                                style: const TextStyle(color: Colors.white70),
+                                textAlign: TextAlign.center),
                           ],
                         ),
                       ),
@@ -317,19 +288,17 @@ class _NowPlayingState extends State<NowPlaying>
                   ),
                 ),
 
-                // Progress bar
+                /// Progress Bar
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 32),
                   child: StreamBuilder<DurationState>(
                     stream: player.durationState,
                     builder: (context, snapshot) {
-                      final state =
-                          snapshot.data ??
+                      final state = snapshot.data ??
                           DurationState(
-                            progress: player.player.position,
-                            buffered: player.player.bufferedPosition,
-                            total: player.player.duration,
-                          );
+                              progress: player.player.position,
+                              buffered: player.player.bufferedPosition,
+                              total: player.player.duration);
                       return ProgressBar(
                         progress: state.progress,
                         buffered: state.buffered,
@@ -337,20 +306,18 @@ class _NowPlayingState extends State<NowPlaying>
                         onSeek: player.seek,
                         barHeight: 3,
                         barCapShape: BarCapShape.round,
-                        baseBarColor: Colors.white.withValues(alpha:0.3),
+                        baseBarColor: Colors.white.withOpacity(0.3),
                         progressBarColor: Colors.white,
                         bufferedBarColor: Colors.white54,
                         thumbColor: Colors.white,
-                        timeLabelTextStyle: const TextStyle(
-                          color: Colors.grey,
-                          fontSize: 12,
-                        ),
+                        timeLabelTextStyle:
+                        const TextStyle(color: Colors.grey, fontSize: 12),
                       );
                     },
                   ),
                 ),
 
-                // Nút điều khiển
+                /// Controls
                 Padding(
                   padding: const EdgeInsets.all(8),
                   child: Row(
@@ -423,9 +390,9 @@ class _NowPlayingState extends State<NowPlaying>
                                   nextMode = LoopMode.off;
                                   break;
                               }
-                              context.read<PlayerProvider>().setLoopMode(
-                                nextMode,
-                              );
+                              context
+                                  .read<PlayerProvider>()
+                                  .setLoopMode(nextMode);
                             },
                             icon: Icon(_repeatIcon(player.loopMode)),
                             iconSize: 24,
@@ -439,7 +406,6 @@ class _NowPlayingState extends State<NowPlaying>
                   ),
                 ),
 
-                // Cụm icon cân đối dưới cùng
                 Padding(
                   padding: const EdgeInsets.all(8),
                   child: Row(

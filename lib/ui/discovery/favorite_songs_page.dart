@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:music_player_application/data/model/song.dart';
 import 'package:music_player_application/data/repository/favorite_song_repository.dart';
 import 'package:music_player_application/service/token_storage.dart';
-import 'package:music_player_application/ui/now_playing/playing.dart';
 import 'package:provider/provider.dart';
 import '../../widgets/base_scaffold.dart';
 import '../../widgets/playing_indicator.dart';
+import '../now_playing/audio_helper.dart';
 import '../providers/player_provider.dart';
+import '../now_playing/playing_scope.dart';
+import '../mini_player/mini_player.dart';
 
 class FavoriteSongsPage extends StatefulWidget {
   const FavoriteSongsPage({super.key});
@@ -51,58 +53,83 @@ class _FavoriteSongsPageState extends State<FavoriteSongsPage> {
     }
   }
 
+
   Future<void> _openNowPlaying(int index) async {
-    final player = context.read<PlayerProvider>();
-    await player.setQueue(favoriteSongs, startIndex: index);
-
-    // Ẩn MiniPlayer
-    player.setNowPlayingOpen(true);
-    player.play();
-
-    await showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      builder: (_) {
-        return ChangeNotifierProvider.value(
-          value: player,
-          child: const NowPlaying(),
-        );
-      },
+    AudioPlayerHelper.playSong(
+      context,
+      songs: favoriteSongs,
+      startIndex: index,
     );
-
-    // Hiện lại MiniPlayer khi đóng
-    player.setNowPlayingOpen(false);
-
-    // reload lại danh sách yêu thích
-    await loadFavorites();
   }
 
   @override
   Widget build(BuildContext context) {
-    return BaseScaffold(
-      appBar: AppBar(
-        title: const Text('Bài hát yêu thích của bạn'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 0,
+    return PlayingScope(
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text(
+            'Bài hát yêu thích của bạn',
+            style: TextStyle(
+              fontFamily: "SF Pro",
+              fontWeight: FontWeight.w600,
+              fontSize: 18,
+              color: Colors.black,
+            ),
+          ),
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          elevation: 0,
+        ),
+        body: isLoading
+            ? const Center(child: CircularProgressIndicator(color: Colors.deepPurple))
+            : favoriteSongs.isEmpty
+            ? const Center(
+          child: Text(
+            'Không có bài hát yêu thích nào.',
+            style: TextStyle(
+              fontFamily: "SF Pro",
+              fontSize: 15,
+              color: Colors.black54,
+            ),
+          ),
+        )
+            : Stack(
+          children: [
+            /// Danh sách bài hát
+            ListView.builder(
+              padding: const EdgeInsets.only(bottom: 80),
+              itemCount: favoriteSongs.length,
+              itemBuilder: (context, index) {
+                final song = favoriteSongs[index];
+                return SongTile(
+                  song: song,
+                  onTap: () => _openNowPlaying(index),
+                );
+              },
+            ),
+
+            /// ✅ MiniPlayer luôn nằm trên bottom nav
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: Consumer<PlayerProvider>(
+                builder: (context, player, _) {
+                  if (player.currentSong == null || player.isNowPlayingOpen) {
+                    return const SizedBox();
+                  }
+                  return Padding(
+                    padding: const EdgeInsets.only(
+                      bottom: kBottomNavigationBarHeight + 6,
+                      left: 8,
+                      right: 8,
+                    ),
+                    child: const MiniPlayer(),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : favoriteSongs.isEmpty
-          ? const Center(child: Text('Không có bài hát yêu thích nào.'))
-          : ListView.builder(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        itemCount: favoriteSongs.length,
-        itemBuilder: (context, index) {
-          final song = favoriteSongs[index];
-          return SongTile(
-            song: song,
-            onTap: () => _openNowPlaying(index),
-          );
-        },
-      ),
-      withBottomNav: true,
     );
   }
 }
@@ -121,7 +148,7 @@ class SongTile extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
-            // Ảnh + chart overlay
+            // Ảnh bài hát + hiệu ứng playing
             Stack(
               alignment: Alignment.center,
               children: [
@@ -147,7 +174,6 @@ class SongTile extends StatelessWidget {
                     ),
                   ),
                 ),
-                // Chart nhảy nhảy khi bài này đang phát
                 Consumer<PlayerProvider>(
                   builder: (context, player, _) {
                     final isCurrent = player.currentSong?.id == song.id;
@@ -171,7 +197,8 @@ class SongTile extends StatelessWidget {
                     style: const TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 16,
-                      color: Colors.black87,
+                      fontFamily: "SF Pro",
+                      color: Colors.black,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -179,7 +206,11 @@ class SongTile extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     song.artist,
-                    style: const TextStyle(fontSize: 14, color: Colors.grey),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontFamily: "SF Pro",
+                      color: Colors.black54,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),

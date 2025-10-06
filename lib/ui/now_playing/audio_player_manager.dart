@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:music_player_application/utils/toast_helper.dart';
 import '../../data/model/song.dart';
 import '../../data/repository/favorite_song_repository.dart';
 import '../../service/token_storage.dart';
@@ -10,10 +11,8 @@ class AudioPlayerManager {
   final PlayerProvider provider;
   final AnimationController imageAnimController;
   final BuildContext context;
-
   late StreamSubscription<bool> _playingSub;
   late StreamSubscription<PlayerState> _playerStateSub;
-
   late FavoriteSongRepository _favoriteSongRepository;
   int _userId = 0;
 
@@ -46,30 +45,36 @@ class AudioPlayerManager {
   }
 
   Future<void> toggleFavorite(
-      Song song, bool isFavorite, Function(bool) callback) async {
+    Song song,
+    bool isFavorite,
+    Function(bool) callback,
+  ) async {
     if (_userId == 0) {
-      _showSnackBar("Không tìm thấy userId");
+      ToastHelper.show(
+        context,
+        message: "Không tìm thấy userId!",
+        isSuccess: false,
+      );
       return;
     }
 
     if (isFavorite) {
       await _favoriteSongRepository.removeFavorite(_userId, song.id);
       callback(false);
-      _showSnackBar('Đã gỡ "${song.title}" khỏi Yêu thích');
+      ToastHelper.show(
+        context,
+        message: 'Đã gỡ "${song.title}" khỏi Yêu thích',
+        isSuccess: false,
+      );
     } else {
       await _favoriteSongRepository.addFavorite(_userId, song.id);
       callback(true);
-      _showSnackBar('Đã thêm "${song.title}" vào Yêu thích');
+      ToastHelper.show(
+        context,
+        message: 'Đã thêm "${song.title}" vào Yêu thích',
+        isSuccess: true,
+      );
     }
-  }
-
-  void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: const Duration(seconds: 2),
-      ),
-    );
   }
 
   void _playRotationAnim() {

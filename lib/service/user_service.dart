@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:music_player_application/data/model/user.dart';
 import 'package:music_player_application/service/token_storage.dart';
 import 'package:music_player_application/utils/api_client.dart';
+import 'package:music_player_application/utils/toast_helper.dart';
 import 'package:mime/mime.dart';
 
 class UserService {
@@ -22,6 +23,9 @@ class UserService {
       }
     } catch (e) {
       debugPrint('Lỗi khi lấy thông tin người dùng: $e');
+      if (context.mounted) {
+        ToastHelper.show(context, message: "Không thể tải thông tin người dùng", isSuccess: false);
+      }
     }
     return null;
   }
@@ -33,49 +37,21 @@ class UserService {
 
       final response = await _client.uploadFile(
         '/api/user/avatar',
-        file: imageFile, // nếu ApiClient mới
+        file: imageFile,
       );
 
-
       if (response.statusCode == 200) {
-        // Thành công
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              backgroundColor: Colors.green,
-              behavior: SnackBarBehavior.floating,
-              content: Row(
-                children: [
-                  Icon(Icons.check_circle, color: Colors.white),
-                  SizedBox(width: 6),
-                  Expanded(child: Text('Ảnh đại diện đã được cập nhật thành công!')),
-                ],
-              ),
-            ),
-          );
+          ToastHelper.show(context, message: "Ảnh đại diện đã được cập nhật thành công!");
         }
         return true;
       }
 
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-            content: Row(
-              children: [
-                const Icon(Icons.error, color: Colors.white),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    ' Tải ảnh thất bại.\n'
-                        'Định dạng .$ext (MIME: $mimeType)\n'
-                        'Lý do có thể: ảnh quá lớn, không hợp lệ hoặc server từ chối.',
-                  ),
-                ),
-              ],
-            ),
-          ),
+        ToastHelper.show(
+          context,
+          message: "Tải ảnh thất bại (.${ext.toUpperCase()}) — ảnh có thể quá lớn hoặc không hợp lệ.",
+          isSuccess: false,
         );
       }
 
@@ -83,19 +59,7 @@ class UserService {
     } catch (e) {
       debugPrint('Lỗi upload avatar: $e');
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-            content: Row(
-              children: [
-                Icon(Icons.warning, color: Colors.red),
-                SizedBox(width: 8),
-                Expanded(child: Text("Đã xảy ra lỗi không xác định khi tải ảnh đại diện!")),
-              ],
-            ),
-          ),
-        );
+        ToastHelper.show(context, message: "Đã xảy ra lỗi khi tải ảnh đại diện!", isSuccess: false);
       }
       return false;
     }
@@ -108,30 +72,26 @@ class UserService {
         body: updatedUser.toJson(),
       );
 
-      if (response.statusCode == 200) return true;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Cập nhật thất bại: ${response.body}")),
-      );
-      return false;
+      if (response.statusCode == 200) {
+        ToastHelper.show(context, message: "Cập nhật thông tin thành công!");
+        return true;
+      } else {
+        ToastHelper.show(context, message: "Cập nhật thất bại: ${response.body}", isSuccess: false);
+        return false;
+      }
     } catch (e) {
       debugPrint("Lỗi cập nhật profile: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Đã xảy ra lỗi khi cập nhật")),
-      );
+      ToastHelper.show(context, message: "Đã xảy ra lỗi khi cập nhật thông tin!", isSuccess: false);
       return false;
     }
   }
-
 
   Future<bool> logout() async {
     try {
       final token = await TokenStorage.getToken();
       if (token == null) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Không tìm thấy token, vui lòng đăng nhập lại!')),
-          );
+          ToastHelper.show(context, message: "Không tìm thấy token, vui lòng đăng nhập lại!", isSuccess: false);
         }
         return false;
       }
@@ -139,28 +99,23 @@ class UserService {
       final response = await _client.post('/api/user/logout');
 
       if (response.statusCode == 200 || response.statusCode == 204) {
-        await TokenStorage.clearAll(); // Xóa token & role sau khi logout thành công
+        await TokenStorage.clearAll();
+        if (context.mounted) {
+          ToastHelper.show(context, message: "Đăng xuất thành công!");
+        }
         return true;
       } else {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Đăng xuất thất bại: ${response.body}')),
-          );
+          ToastHelper.show(context, message: "Đăng xuất thất bại: ${response.body}", isSuccess: false);
         }
         return false;
       }
     } catch (e) {
       debugPrint('Lỗi logout: $e');
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Lỗi kết nối khi đăng xuất')),
-        );
+        ToastHelper.show(context, message: "Lỗi kết nối khi đăng xuất!", isSuccess: false);
       }
       return false;
     }
   }
-
-
-
-
 }

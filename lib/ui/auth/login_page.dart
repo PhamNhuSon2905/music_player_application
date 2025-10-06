@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:music_player_application/ui/auth/register_page.dart';
+import 'package:music_player_application/utils/toast_helper.dart';
 import '../../data/repository/auth_repository.dart';
 import '../../service/token_storage.dart';
 import '../home/home.dart';
@@ -32,10 +33,7 @@ class _LoginPageState extends State<LoginPage> {
     if (!_formKey.currentState!.validate()) return;
 
     FocusScope.of(context).unfocus();
-
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
     try {
       final result = await _authRepo.login(
@@ -48,37 +46,28 @@ class _LoginPageState extends State<LoginPage> {
       await TokenStorage.saveRole(result.role);
 
       if (!mounted) return;
+
+      ToastHelper.show(
+        context,
+        message: 'Đăng nhập thành công!',
+        isSuccess: true,
+      );
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
           builder: (_) => const MusicHomePage(),
-          settings: const RouteSettings(
-            arguments: 'Đăng nhập thành công!',
-          ),
         ),
       );
     } catch (e) {
       if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            e.toString().replaceAll('Exception: ', ''), // lấy message thực tế
-            style: const TextStyle(fontFamily: 'SF Pro'),
-          ),
-          backgroundColor: Colors.redAccent,
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          duration: const Duration(seconds: 3),
-        ),
+      ToastHelper.show(
+        context,
+        message: e.toString().replaceAll('Exception: ', ''),
+        isSuccess: false,
       );
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -174,11 +163,7 @@ class _LoginPageState extends State<LoginPage> {
                           color: Colors.grey[600],
                           size: 20,
                         ),
-                        onPressed: () {
-                          setState(() {
-                            _obscureText = !_obscureText;
-                          });
-                        },
+                        onPressed: () => setState(() => _obscureText = !_obscureText),
                       ),
                     ),
                     validator: (value) => value == null || value.length < 6
@@ -196,13 +181,6 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 24),
-                  if (_error != null)
-                    Text(
-                      _error!,
-                      style: const TextStyle(color: Colors.redAccent, fontFamily: 'SF Pro'),
-                      textAlign: TextAlign.center,
-                    ),
                   const SizedBox(height: 24),
                   ElevatedButton(
                     onPressed: _isLoading ? null : _login,
