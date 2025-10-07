@@ -41,8 +41,8 @@ class Song {
     final imageUrl = normalizeUrl(map['image'] ?? '');
     final sourceUrl = normalizeUrl(map['source'] ?? '');
 
-    print('Image URL: $imageUrl');
-    print('Audio URL: $sourceUrl');
+    // print('Image URL: $imageUrl');
+    // print('Audio URL: $sourceUrl');
 
     return Song(
       id: map['id'] ?? '',

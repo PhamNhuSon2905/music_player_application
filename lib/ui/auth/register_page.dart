@@ -93,7 +93,7 @@ class _RegisterPageState extends State<RegisterPage> {
           message: "Đăng ký tài khoản thành công!",
           isSuccess: true,
         );
-        Future.delayed(const Duration(seconds: 2), () {
+        Future.delayed(const Duration(milliseconds: 10), () {
           if (mounted) Navigator.pop(context);
         });
       } else if (response.statusCode == 400 && response.body.isNotEmpty) {

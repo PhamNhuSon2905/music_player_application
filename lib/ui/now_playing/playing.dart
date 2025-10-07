@@ -232,7 +232,7 @@ class _NowPlayingState extends State<NowPlaying>
                         padding: const EdgeInsets.only(left: 16),
                         child: IconButton(
                           onPressed: () {},
-                          icon: const Icon(Icons.share_rounded),
+                          icon: const Icon(Icons.ios_share_rounded),
                           color: Colors.grey,
                         ),
                       ),
