@@ -16,7 +16,8 @@ class ApiClient {
     Map<String, String>? extraHeaders,
   }) async {
     final token = await TokenStorage.getToken();
-    print('[ApiClient] Token: $token');
+
+    // print('[ApiClient] Token: $token');
 
     return {
       'Content-Type': 'application/json; charset=UTF-8',
@@ -30,13 +31,13 @@ class ApiClient {
     final uri = Uri.parse('$baseUrl$path').replace(queryParameters: params);
     final headers = await _getHeaders();
 
-    print('[GET] $uri');
-    print('[GET] Headers: $headers');
+    // print('[GET] $uri');
+    // print('[GET] Headers: $headers');
 
     final response = await http.get(uri, headers: headers);
 
-    print('[GET] Status: ${response.statusCode}');
-    print('[GET] Body: ${response.body}');
+    // print('[GET] Status: ${response.statusCode}');
+    // print('[GET] Body: ${response.body}');
 
     await _handleUnauthorized(response);
     return response;
@@ -50,9 +51,9 @@ class ApiClient {
     final uri = Uri.parse('$baseUrl$path');
     final allHeaders = await _getHeaders(extraHeaders: headers);
 
-    print('[POST] $uri');
-    print('[POST] Headers: $allHeaders');
-    print('[POST] Body: ${jsonEncode(body)}');
+    // print('[POST] $uri');
+    // print('[POST] Headers: $allHeaders');
+    // print('[POST] Body: ${jsonEncode(body)}');
 
     final response = await http.post(
       uri,
@@ -60,8 +61,8 @@ class ApiClient {
       body: jsonEncode(body),
     );
 
-    print('[POST] Status: ${response.statusCode}');
-    print('[POST] Body: ${response.body}');
+    // print('[POST] Status: ${response.statusCode}');
+    // print('[POST] Body: ${response.body}');
 
     await _handleUnauthorized(response);
     return response;
@@ -75,9 +76,9 @@ class ApiClient {
     final uri = Uri.parse('$baseUrl$path');
     final allHeaders = await _getHeaders(extraHeaders: headers);
 
-    print('[PUT] $uri');
-    print('[PUT] Headers: $allHeaders');
-    print('[PUT] Body: ${jsonEncode(body)}');
+    // print('[PUT] $uri');
+    // print('[PUT] Headers: $allHeaders');
+    //print('[PUT] Body: ${jsonEncode(body)}');
 
     final response = await http.put(
       uri,
@@ -85,8 +86,8 @@ class ApiClient {
       body: jsonEncode(body),
     );
 
-    print('[PUT] Status: ${response.statusCode}');
-    print('[PUT] Body: ${response.body}');
+    // print('[PUT] Status: ${response.statusCode}');
+    // print('[PUT] Body: ${response.body}');
 
     await _handleUnauthorized(response);
     return response;
@@ -100,13 +101,13 @@ class ApiClient {
     final uri = Uri.parse('$baseUrl$path');
     final allHeaders = await _getHeaders(extraHeaders: headers);
 
-    print('[DELETE] $uri');
-    print('[DELETE] Headers: $allHeaders');
+    // print('[DELETE] $uri');
+    // print('[DELETE] Headers: $allHeaders');
 
     final response = await http.delete(uri, headers: allHeaders);
 
-    print('[DELETE] Status: ${response.statusCode}');
-    print('[DELETE] Body: ${response.body}');
+    // print('[DELETE] Status: ${response.statusCode}');
+    // print('[DELETE] Body: ${response.body}');
 
     await _handleUnauthorized(response);
     return response;
@@ -123,10 +124,10 @@ class ApiClient {
     final uri = Uri.parse('$baseUrl$path');
     final token = await TokenStorage.getToken();
 
-    print('[UPLOAD $method] $uri');
+    // print('[UPLOAD $method] $uri');
     if (file != null) print('[UPLOAD $method] File: ${file.path}');
-    print('[UPLOAD $method] Token: $token');
-    print('[UPLOAD $method] Fields: $fields');
+    // print('[UPLOAD $method] Token: $token');
+    // print('[UPLOAD $method] Fields: $fields');
 
     final request = http.MultipartRequest(method, uri)
       ..headers.addAll({
@@ -147,8 +148,8 @@ class ApiClient {
     final streamedResponse = await request.send();
     final response = await http.Response.fromStream(streamedResponse);
 
-    print('[UPLOAD $method] Status: ${response.statusCode}');
-    print('[UPLOAD $method] Body: ${response.body}');
+    // print('[UPLOAD $method] Status: ${response.statusCode}');
+    // print('[UPLOAD $method] Body: ${response.body}');
 
     await _handleUnauthorized(response);
     return response;

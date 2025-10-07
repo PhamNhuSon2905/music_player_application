@@ -41,9 +41,6 @@ class UserService {
       );
 
       if (response.statusCode == 200) {
-        if (context.mounted) {
-          ToastHelper.show(context, message: "Ảnh đại diện đã được cập nhật thành công!");
-        }
         return true;
       }
 
@@ -58,9 +55,6 @@ class UserService {
       return false;
     } catch (e) {
       debugPrint('Lỗi upload avatar: $e');
-      if (context.mounted) {
-        ToastHelper.show(context, message: "Đã xảy ra lỗi khi tải ảnh đại diện!", isSuccess: false);
-      }
       return false;
     }
   }
@@ -100,9 +94,6 @@ class UserService {
 
       if (response.statusCode == 200 || response.statusCode == 204) {
         await TokenStorage.clearAll();
-        if (context.mounted) {
-          ToastHelper.show(context, message: "Đăng xuất thành công!");
-        }
         return true;
       } else {
         if (context.mounted) {

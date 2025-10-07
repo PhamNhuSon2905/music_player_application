@@ -76,7 +76,7 @@ class _ToastMessageState extends State<_ToastMessage>
     final width = MediaQuery.of(context).size.width;
 
     return Positioned(
-      bottom: MediaQuery.of(context).size.height * 0.36, // giữa màn hình
+      bottom: MediaQuery.of(context).size.height * 0.5, // giữa màn hình
       left: width * 0.15,
       right: width * 0.15,
       child: FadeTransition(
@@ -89,7 +89,7 @@ class _ToastMessageState extends State<_ToastMessage>
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF000000).withValues( alpha: 0.86),
+                  color: const Color(0xFF000000).withValues(alpha: 0.86),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Row(

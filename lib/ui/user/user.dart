@@ -76,18 +76,18 @@ class _AccountTabState extends State<AccountTab> {
         child: _currentUser == null
             ? const Center(child: CircularProgressIndicator())
             : SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 48),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              _buildProfileHeader(),
-              const SizedBox(height: 12),
-              _buildUserInfo(),
-              const SizedBox(height: 12),
-              _buildUpdateButton(),
-            ],
-          ),
-        ),
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 48),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    _buildProfileHeader(),
+                    const SizedBox(height: 12),
+                    _buildUserInfo(),
+                    const SizedBox(height: 12),
+                    _buildUpdateButton(),
+                  ],
+                ),
+              ),
       ),
     );
   }
@@ -107,7 +107,8 @@ class _AccountTabState extends State<AccountTab> {
                 backgroundColor: theme.colorScheme.surfaceVariant,
                 backgroundImage: _avatar != null
                     ? FileImage(_avatar!)
-                    : NetworkImage(_currentUser!.fullAvatarUrl) as ImageProvider,
+                    : NetworkImage(_currentUser!.fullAvatarUrl)
+                          as ImageProvider,
               ),
               Container(
                 decoration: BoxDecoration(
@@ -122,7 +123,11 @@ class _AccountTabState extends State<AccountTab> {
                   ],
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
+                  icon: const Icon(
+                    Icons.camera_alt,
+                    color: Colors.white,
+                    size: 20,
+                  ),
                   onPressed: _pickImage,
                   tooltip: "Chọn ảnh đại diện",
                 ),
@@ -158,15 +163,31 @@ class _AccountTabState extends State<AccountTab> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            _buildInfoTile("Tên đăng nhập", _currentUser!.username, Icons.person_outline),
+            _buildInfoTile(
+              "Tên đăng nhập",
+              _currentUser!.username,
+              Icons.person_outline,
+            ),
             const Divider(height: 1),
-            _buildInfoTile("Họ tên", _currentUser!.fullname, Icons.badge_outlined),
+            _buildInfoTile(
+              "Họ tên",
+              _currentUser!.fullname,
+              Icons.badge_outlined,
+            ),
             const Divider(height: 1),
             _buildInfoTile("Email", _currentUser!.email, Icons.email_outlined),
             const Divider(height: 1),
-            _buildInfoTile("Số điện thoại", _currentUser!.phone, Icons.phone_outlined),
+            _buildInfoTile(
+              "Số điện thoại",
+              _currentUser!.phone,
+              Icons.phone_outlined,
+            ),
             const Divider(height: 1),
-            _buildInfoTile("Địa chỉ", _currentUser!.address, Icons.location_on_outlined),
+            _buildInfoTile(
+              "Địa chỉ",
+              _currentUser!.address,
+              Icons.location_on_outlined,
+            ),
             const Divider(height: 1),
             _buildInfoTile(
               "Giới tính",
@@ -241,7 +262,9 @@ class _AccountTabState extends State<AccountTab> {
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.purple,
             padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
             elevation: 4,
             minimumSize: const Size(200, 56),
           ),
@@ -271,8 +294,14 @@ class _AccountTabState extends State<AccountTab> {
                 title: const Text("Xác nhận đăng xuất"),
                 content: const Text("Bạn có chắc chắn muốn đăng xuất không?"),
                 actions: [
-                  TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Hủy")),
-                  TextButton(onPressed: () => Navigator.pop(context, true), child: const Text("Đăng xuất")),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: const Text("Hủy"),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    child: const Text("Đăng xuất"),
+                  ),
                 ],
               ),
             );
@@ -286,8 +315,10 @@ class _AccountTabState extends State<AccountTab> {
                   message: "Đăng xuất tài khoản thành công!",
                   isSuccess: true,
                 );
-                await Future.delayed(const Duration(seconds: 1));
-                Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+                await Future.delayed(const Duration(milliseconds: 10));
+                Navigator.of(
+                  context,
+                ).pushNamedAndRemoveUntil('/login', (route) => false);
               } else {
                 ToastHelper.show(
                   context,
