@@ -61,7 +61,7 @@ class MyApp extends StatelessWidget {
         ),
         switchTheme: SwitchThemeData(
           thumbColor: MaterialStateProperty.all(Colors.purpleAccent),
-          trackColor: MaterialStateProperty.all(Colors.purple.withOpacity(0.5)),
+          trackColor: MaterialStateProperty.all(Colors.purple.withValues(alpha: 0.5)),
         ),
         textTheme: const TextTheme(
           bodyMedium: TextStyle(color: Colors.white),

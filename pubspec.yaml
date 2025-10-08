@@ -89,14 +89,16 @@ flutter:
         - asset: assets/fonts/SF-Pro.ttf
 
 
-flutter_launcher_icons:
+flutter_icons:
     android: true
     ios : false
-    image_path: assets/logoZ.png
+    image_path: "assets/splash_screen.png"
+    adaptive_icon_background : "#ffffff"
+    adaptive_icon_foreground : "assets/logoZ.png"
 
 flutter_native_splash:
   color: "#ffffff"
-  image: assets/splash_screen.png
+  image: "assets/splash_screen.png"
   android: true
   ios: false
   fullscreen: true
