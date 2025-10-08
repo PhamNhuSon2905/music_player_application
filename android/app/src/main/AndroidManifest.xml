@@ -13,7 +13,7 @@
 
 
     <application
-        android:label="music_player_application"
+        android:label="Music App"
         android:icon="@mipmap/ic_launcher"
         android:usesCleartextTraffic="true">
 

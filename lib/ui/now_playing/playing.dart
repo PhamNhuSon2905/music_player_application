@@ -136,11 +136,24 @@ class _NowPlayingState extends State<NowPlaying>
                 Image.asset('assets/musical_note.jpg', fit: BoxFit.cover),
           ),
 
-          /// Blur overlay
+          // Blur
           Blur(
-            blur: 30,
-            blurColor: Colors.black.withOpacity(0.4),
-            child: Container(),
+            blur: 20,
+            blurColor: Colors.black.withValues(alpha: 0.05), // giảm tối nền
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.white.withValues(alpha: 0.05), // sáng hơn ở trên
+                    Colors.transparent,
+                    Colors.black.withValues(alpha: 0.15), // nhẹ ở dưới
+                  ],
+                  stops: const [0.0, 0.5, 1.0],
+                ),
+              ),
+            ),
           ),
 
           /// UI Content
@@ -306,7 +319,7 @@ class _NowPlayingState extends State<NowPlaying>
                         onSeek: player.seek,
                         barHeight: 3,
                         barCapShape: BarCapShape.round,
-                        baseBarColor: Colors.white.withOpacity(0.3),
+                        baseBarColor: Colors.white.withValues(alpha: 0.3),
                         progressBarColor: Colors.white,
                         bufferedBarColor: Colors.white54,
                         thumbColor: Colors.white,

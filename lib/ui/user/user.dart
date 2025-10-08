@@ -116,7 +116,7 @@ class _AccountTabState extends State<AccountTab> {
                   color: Colors.purple,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.25),
+                      color: Colors.black.withValues(alpha: 0.25),
                       blurRadius: 6,
                       offset: const Offset(0, 2),
                     ),
@@ -218,7 +218,7 @@ class _AccountTabState extends State<AccountTab> {
                   title,
                   style: TextStyle(
                     fontSize: 14,
-                    color: theme.textTheme.bodySmall?.color?.withOpacity(0.7),
+                    color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7),
                     fontFamily: 'SF Pro',
                   ),
                 ),
