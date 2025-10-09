@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:music_player_application/ui/auth/login_page.dart';
 import 'package:music_player_application/ui/providers/player_provider.dart';
-import 'package:music_player_application/ui/settings/theme_notifier.dart';
 import 'package:music_player_application/ui/splash_screen/splash_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
@@ -15,7 +14,6 @@ Future<void> clearSession() async {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Init JustAudioBackground view notification
   await JustAudioBackground.init(
     androidNotificationChannelId: 'music_player_channel',
     androidNotificationChannelName: 'Music Player',
@@ -27,7 +25,6 @@ Future<void> main() async {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => ThemeNotifier()),
         ChangeNotifierProvider(create: (_) => PlayerProvider()),
       ],
       child: const MyApp(),
@@ -40,32 +37,24 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final themeNotifier = context.watch<ThemeNotifier>();
-
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      themeMode: themeNotifier.themeMode,
-      theme: ThemeData.light(),
-      darkTheme: ThemeData(
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF1E1E1E),
+      theme: ThemeData(
+        brightness: Brightness.light,
+        scaffoldBackgroundColor: Colors.white,
+        fontFamily: "SF Pro",
         appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF2C2C2C),
-          foregroundColor: Colors.white,
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
           elevation: 0,
         ),
-        colorScheme: const ColorScheme.dark(
-          primary: Color(0xFFBB86FC),
-          secondary: Color(0xFF03DAC6),
-          surface: Color(0xFF2C2C2C),
-        ),
-        switchTheme: SwitchThemeData(
-          thumbColor: MaterialStateProperty.all(Colors.purpleAccent),
-          trackColor: MaterialStateProperty.all(Colors.purple.withValues(alpha: 0.5)),
+        colorScheme: const ColorScheme.light(
+          primary: Colors.deepPurple,
+          secondary: Colors.purpleAccent,
         ),
         textTheme: const TextTheme(
-          bodyMedium: TextStyle(color: Colors.white),
-          titleMedium: TextStyle(color: Colors.white),
+          bodyMedium: TextStyle(color: Colors.black),
+          titleMedium: TextStyle(color: Colors.black),
         ),
       ),
       home: const SplashScreen(),
