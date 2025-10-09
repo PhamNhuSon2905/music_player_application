@@ -28,9 +28,7 @@ class _AccountTabState extends State<AccountTab> {
     final userService = UserService(context);
     final user = await userService.getCurrentUser();
     if (user != null && mounted) {
-      setState(() {
-        _currentUser = user;
-      });
+      setState(() => _currentUser = user);
     }
   }
 
@@ -41,110 +39,121 @@ class _AccountTabState extends State<AccountTab> {
       final userService = UserService(context);
       final success = await userService.uploadAvatar(imageFile);
       if (success) {
-        setState(() {
-          _avatar = imageFile;
-        });
+        setState(() => _avatar = imageFile);
         _loadUser();
-        ToastHelper.show(
-          context,
-          message: "Ảnh đại diện đã cập nhật thành công!",
-          isSuccess: true,
-        );
+        ToastHelper.show(context,
+            message: "Ảnh đại diện đã cập nhật thành công!", isSuccess: true);
       } else {
-        ToastHelper.show(
-          context,
-          message: "Lỗi khi tải ảnh đại diện!",
-          isSuccess: false,
-        );
+        ToastHelper.show(context,
+            message: "Lỗi khi tải ảnh đại diện!", isSuccess: false);
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Thông tin tài khoản của bạn"),
-        centerTitle: true,
-        backgroundColor: theme.scaffoldBackgroundColor,
-        elevation: 0,
-        foregroundColor: theme.textTheme.titleLarge?.color,
-      ),
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: _currentUser == null
             ? const Center(child: CircularProgressIndicator())
             : SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 48),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    _buildProfileHeader(),
-                    const SizedBox(height: 12),
-                    _buildUserInfo(),
-                    const SizedBox(height: 12),
-                    _buildUpdateButton(),
-                  ],
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 🔹 Header
+              const Padding(
+                padding: EdgeInsets.only(left: 6, top: 6, bottom: 12),
+                child: Text(
+                  "Cá nhân",
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'SF Pro',
+                    color: Colors.black,
+                  ),
                 ),
               ),
+
+              // 🔹 Avatar + Tên
+              _buildProfileHeader(),
+              const SizedBox(height: 16),
+
+              // 🔹 Khung thông tin
+              _buildUserInfo(),
+              const SizedBox(height: 16),
+
+              // 🔹 Nút cập nhật + đăng xuất
+              _buildUpdateButton(),
+            ],
+          ),
+        ),
       ),
     );
   }
 
   Widget _buildProfileHeader() {
-    final theme = Theme.of(context);
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 8),
+    return Center(
       child: Column(
         children: [
           Stack(
             alignment: Alignment.bottomRight,
             children: [
-              CircleAvatar(
-                radius: 60,
-                backgroundColor: theme.colorScheme.surfaceVariant,
-                backgroundImage: _avatar != null
-                    ? FileImage(_avatar!)
-                    : NetworkImage(_currentUser!.fullAvatarUrl)
-                          as ImageProvider,
-              ),
               Container(
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.purple,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.25),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: IconButton(
-                  icon: const Icon(
-                    Icons.camera_alt,
-                    color: Colors.white,
-                    size: 20,
+                  gradient: LinearGradient(
+                    colors: [Colors.purple.shade200, Colors.purple.shade50],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
-                  onPressed: _pickImage,
-                  tooltip: "Chọn ảnh đại diện",
+                ),
+                padding: const EdgeInsets.all(4),
+                child: CircleAvatar(
+                  radius: 58,
+                  backgroundColor: Colors.grey.shade100,
+                  backgroundImage: _avatar != null
+                      ? FileImage(_avatar!)
+                      : NetworkImage(_currentUser!.fullAvatarUrl)
+                  as ImageProvider,
+                ),
+              ),
+              Positioned(
+                bottom: 4,
+                right: 4,
+                child: GestureDetector(
+                  onTap: _pickImage,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.grey,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.2),
+                          blurRadius: 6,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    padding: const EdgeInsets.all(6),
+                    child: const Icon(Icons.camera_alt,
+                        color: Colors.white, size: 18),
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           Text(
             _currentUser!.fullname,
             style: const TextStyle(
               fontSize: 20,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.bold,
               fontFamily: 'SF Pro',
+              color: Colors.black,
             ),
-            textAlign: TextAlign.center,
-            overflow: TextOverflow.ellipsis,
-            maxLines: 1,
           ),
         ],
       ),
@@ -152,140 +161,118 @@ class _AccountTabState extends State<AccountTab> {
   }
 
   Widget _buildUserInfo() {
-    final theme = Theme.of(context);
-
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      color: theme.cardColor,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            _buildInfoTile(
-              "Tên đăng nhập",
-              _currentUser!.username,
-              Icons.person_outline,
-            ),
-            const Divider(height: 1),
-            _buildInfoTile(
-              "Họ tên",
-              _currentUser!.fullname,
-              Icons.badge_outlined,
-            ),
-            const Divider(height: 1),
-            _buildInfoTile("Email", _currentUser!.email, Icons.email_outlined),
-            const Divider(height: 1),
-            _buildInfoTile(
-              "Số điện thoại",
-              _currentUser!.phone,
-              Icons.phone_outlined,
-            ),
-            const Divider(height: 1),
-            _buildInfoTile(
-              "Địa chỉ",
-              _currentUser!.address,
-              Icons.location_on_outlined,
-            ),
-            const Divider(height: 1),
-            _buildInfoTile(
-              "Giới tính",
-              _currentUser!.gender == true ? "Nam" : "Nữ",
-              Icons.transgender_outlined,
-            ),
-          ],
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.white, Colors.purple.shade50],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-      ),
-    );
-  }
-
-  Widget _buildInfoTile(String title, String value, IconData icon) {
-    final theme = Theme.of(context);
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: Colors.purple, size: 24),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7),
-                    fontFamily: 'SF Pro',
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    fontFamily: 'SF Pro',
-                    color: theme.textTheme.bodyLarge?.color,
-                  ),
-                  softWrap: true,
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 2,
-                ),
-              ],
-            ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
+        ],
+      ),
+      child: Column(
+        children: [
+          _buildInfoTile("Tên đăng nhập", _currentUser!.username,
+              Icons.person_outline_rounded),
+          Divider(color: Colors.grey.shade300, thickness: 1, height: 14),
+          _buildInfoTile("Họ tên", _currentUser!.fullname, Icons.badge_outlined),
+          Divider(color: Colors.grey.shade300, thickness: 1, height: 14),
+          _buildInfoTile("Email", _currentUser!.email, Icons.email_outlined),
+          Divider(color: Colors.grey.shade300, thickness: 1, height: 14),
+          _buildInfoTile(
+              "Số điện thoại", _currentUser!.phone, Icons.phone_outlined),
+          Divider(color: Colors.grey.shade300, thickness: 1, height: 14),
+          _buildInfoTile(
+              "Địa chỉ", _currentUser!.address, Icons.location_on_outlined),
+          Divider(color: Colors.grey.shade300, thickness: 1, height: 14),
+          _buildInfoTile("Giới tính",
+              _currentUser!.gender == true ? "Nam" : "Nữ", Icons.transgender_rounded),
         ],
       ),
     );
   }
 
-  Widget _buildUpdateButton() {
-    final theme = Theme.of(context);
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
+  Widget _buildInfoTile(String title, String value, IconData icon) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ElevatedButton(
-          onPressed: () async {
-            final updated = await Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => UpdateProfilePage(user: _currentUser!),
-              ),
-            );
-            if (updated == true) _loadUser();
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.purple,
-            padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            elevation: 4,
-            minimumSize: const Size(200, 56),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: const [
-              Icon(Icons.edit, color: Colors.white, size: 20),
-              SizedBox(width: 8),
+        Icon(icon, color: Colors.deepPurpleAccent, size: 24),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               Text(
-                "Cập nhật thông tin",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
+                title,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Colors.black54,
                   fontFamily: 'SF Pro',
                 ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value.isNotEmpty ? value : "(Chưa có)",
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  fontFamily: 'SF Pro',
+                  color: Colors.black,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
         ),
-        const SizedBox(height: 5),
+      ],
+    );
+  }
+
+  Widget _buildUpdateButton() {
+    return Column(
+      children: [
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: () async {
+              final updated = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => UpdateProfilePage(user: _currentUser!)),
+              );
+              if (updated == true) _loadUser();
+            },
+            icon: const Icon(Icons.edit, color: Colors.white),
+            label: const Text(
+              "Cập nhật thông tin cá nhân",
+              style: TextStyle(
+                fontSize: 16,
+                fontFamily: 'SF Pro',
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.deepPurpleAccent,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+              elevation: 4,
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
         TextButton.icon(
           onPressed: () async {
             final confirm = await showDialog<bool>(
@@ -300,7 +287,10 @@ class _AccountTabState extends State<AccountTab> {
                   ),
                   TextButton(
                     onPressed: () => Navigator.pop(context, true),
-                    child: const Text("Đăng xuất"),
+                    child: const Text(
+                      "Đăng xuất",
+                      style: TextStyle(color: Colors.red),
+                    ),
                   ),
                 ],
               ),
@@ -310,26 +300,30 @@ class _AccountTabState extends State<AccountTab> {
               final userService = UserService(context);
               final success = await userService.logout();
               if (success) {
-                ToastHelper.show(
-                  context,
-                  message: "Đăng xuất tài khoản thành công!",
-                  isSuccess: true,
-                );
-                await Future.delayed(const Duration(milliseconds: 10));
-                Navigator.of(
-                  context,
-                ).pushNamedAndRemoveUntil('/login', (route) => false);
+                ToastHelper.show(context,
+                    message: "Đăng xuất tài khoản thành công!",
+                    isSuccess: true);
+                await Future.delayed(const Duration(milliseconds: 100));
+                if (mounted) {
+                  Navigator.of(context)
+                      .pushNamedAndRemoveUntil('/login', (route) => false);
+                }
               } else {
-                ToastHelper.show(
-                  context,
-                  message: "Không thể đăng xuất, vui lòng thử lại!",
-                  isSuccess: false,
-                );
+                ToastHelper.show(context,
+                    message: "Không thể đăng xuất, vui lòng thử lại!",
+                    isSuccess: false);
               }
             }
           },
-          icon: const Icon(Icons.logout, color: Colors.black),
-          label: const Text('Đăng xuất', style: TextStyle(color: Colors.black)),
+          icon: const Icon(Icons.logout, color: Colors.red),
+          label: const Text(
+            'Đăng xuất tài khoản',
+            style: TextStyle(
+              color: Colors.red,
+              fontFamily: 'SF Pro',
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ),
       ],
     );

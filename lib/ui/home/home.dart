@@ -5,7 +5,8 @@ import 'package:music_player_application/ui/mini_player/mini_player.dart';
 import 'package:music_player_application/ui/now_playing/playing_scope.dart';
 import 'package:music_player_application/ui/settings/settings.dart';
 import 'package:music_player_application/ui/user/user.dart';
-import 'package:music_player_application/utils/toast_helper.dart'; // ✅ thêm helper toast
+import 'package:music_player_application/service/user_service.dart';
+import 'package:music_player_application/utils/toast_helper.dart';
 import 'package:provider/provider.dart';
 import '../../data/model/song.dart';
 import '../../widgets/playing_indicator.dart';
@@ -19,7 +20,6 @@ class MusicApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Music App',
       theme: ThemeData(
         fontFamily: "SF Pro",
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.grey),
@@ -46,6 +46,7 @@ class MusicHomePage extends StatefulWidget {
 
 class _MusicHomePageState extends State<MusicHomePage> {
   int _currentIndex = 0;
+  String? _avatarUrl;
 
   final List<Widget> _tabs = const [
     HomeTab(),
@@ -55,28 +56,28 @@ class _MusicHomePageState extends State<MusicHomePage> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _loadUserAvatar();
+  }
+
+  Future<void> _loadUserAvatar() async {
+    try {
+      final userService = UserService(context);
+      final user = await userService.getCurrentUser();
+      if (mounted && user != null) {
+        setState(() => _avatarUrl = user.fullAvatarUrl);
+      }
+    } catch (_) {}
+  }
+
+  @override
   Widget build(BuildContext context) {
     return PlayingScope(
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text(
-            'Music App',
-            style: TextStyle(
-              fontFamily: "SF Pro",
-              fontWeight: FontWeight.w600,
-              fontSize: 20,
-            ),
-          ),
-          backgroundColor: Colors.white,
-          foregroundColor: Colors.black,
-          elevation: 0,
-          centerTitle: true,
-        ),
         body: Stack(
           children: [
             _tabs[_currentIndex],
-
-
             Align(
               alignment: Alignment.bottomCenter,
               child: Consumer<PlayerProvider>(
@@ -84,13 +85,11 @@ class _MusicHomePageState extends State<MusicHomePage> {
                   if (player.currentSong == null || player.isNowPlayingOpen) {
                     return const SizedBox();
                   }
-
                   return AnimatedOpacity(
                     opacity: player.isPlaying ? 1 : 0.9,
                     duration: const Duration(milliseconds: 300),
                     child: const MiniPlayer(),
                   );
-
                 },
               ),
             ),
@@ -102,20 +101,45 @@ class _MusicHomePageState extends State<MusicHomePage> {
           unselectedItemColor: Colors.grey,
           type: BottomNavigationBarType.fixed,
           onTap: (index) => setState(() => _currentIndex = index),
-          items: const [
-            BottomNavigationBarItem(
+          items: [
+            const BottomNavigationBarItem(
               icon: Icon(Icons.library_music_rounded),
               label: 'Thư Viện',
             ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.explore_rounded),
+            const BottomNavigationBarItem(
+              icon: Icon(Icons.adjust_rounded),
               label: 'Khám Phá',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.person_rounded),
+              icon: _avatarUrl != null
+                  ? Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: _currentIndex == 2
+                            ? LinearGradient(
+                          colors: [
+                            Colors.purple.shade200,
+                            Colors.purple.shade50,
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        )
+                            : const LinearGradient(
+                          colors: [Colors.grey, Colors.grey],
+                        ),
+                      ),
+                      child: CircleAvatar(
+                        radius: 11,
+                        backgroundColor: Colors.white,
+                        backgroundImage: NetworkImage(_avatarUrl!),
+                      ),
+                    )
+                  : const Icon(Icons.person_rounded),
               label: 'Cá Nhân',
             ),
-            BottomNavigationBarItem(
+
+            const BottomNavigationBarItem(
               icon: Icon(Icons.settings_rounded),
               label: 'Cài Đặt',
             ),
@@ -198,13 +222,21 @@ class _HomeTabPageState extends State<HomeTabPage> {
       final result = await _viewModel.searchSongs(keyword, context);
       if (mounted) {
         if (result.isEmpty) {
-          ToastHelper.show(context, message: "Không tìm thấy kết quả nào", isSuccess: false);
+          ToastHelper.show(
+            context,
+            message: "Không tìm thấy kết quả nào",
+            isSuccess: false,
+          );
         }
         setState(() => filteredSongs = result);
       }
     } catch (e) {
       if (mounted) {
-        ToastHelper.show(context, message: "Lỗi tìm kiếm: $e", isSuccess: false);
+        ToastHelper.show(
+          context,
+          message: "Lỗi tìm kiếm: $e",
+          isSuccess: false,
+        );
         setState(() => filteredSongs = []);
       }
     }
@@ -219,14 +251,25 @@ class _HomeTabPageState extends State<HomeTabPage> {
         decoration: InputDecoration(
           hintText: 'Tìm kiếm bài hát, ca sĩ...',
           hintStyle: const TextStyle(color: Colors.grey, fontSize: 15),
-          prefixIcon: const Icon(Icons.search_rounded, size: 22, color: Colors.grey),
+          prefixIcon: const Icon(
+            Icons.search_rounded,
+            size: 22,
+            color: Colors.grey,
+          ),
           suffixIcon: _searchController.text.isNotEmpty
               ? IconButton(
-            icon: const Icon(Icons.clear_rounded, size: 20, color: Colors.grey),
-            onPressed: _onSearchCleared,
-          )
+                  icon: const Icon(
+                    Icons.clear_rounded,
+                    size: 20,
+                    color: Colors.grey,
+                  ),
+                  onPressed: _onSearchCleared,
+                )
               : null,
-          contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
+          contentPadding: const EdgeInsets.symmetric(
+            vertical: 0,
+            horizontal: 12,
+          ),
           filled: true,
           fillColor: Colors.grey.shade100,
           border: OutlineInputBorder(
@@ -242,11 +285,29 @@ class _HomeTabPageState extends State<HomeTabPage> {
   Widget getBody() {
     return SafeArea(
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const Padding(
+            padding: EdgeInsets.fromLTRB(20, 12, 0, 4),
+            child: Text(
+              "Thư viện",
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                fontFamily: "SF Pro",
+                color: Colors.black,
+              ),
+            ),
+          ),
           _buildSearchBar(),
           Expanded(
             child: isSearching && filteredSongs.isEmpty
-                ? const Center(child: Text('Không tìm thấy kết quả nào'))
+                ? const Center(
+                    child: Text(
+                      'Không tìm thấy kết quả nào',
+                      style: TextStyle(fontFamily: "SF Pro", fontSize: 16),
+                    ),
+                  )
                 : filteredSongs.isEmpty
                 ? getProgressBar()
                 : getListView(),
@@ -285,7 +346,11 @@ class _HomeTabPageState extends State<HomeTabPage> {
           children: [
             const Text(
               "Tùy chọn",
-              style: TextStyle(fontSize: 18, fontFamily: "SF Pro", fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 18,
+                fontFamily: "SF Pro",
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 16),
             ListTile(
@@ -293,7 +358,11 @@ class _HomeTabPageState extends State<HomeTabPage> {
               title: const Text('Thêm vào playlist'),
               onTap: () {
                 Navigator.pop(context);
-                ToastHelper.show(context, message: "Đã thêm vào playlist", isSuccess: true);
+                ToastHelper.show(
+                  context,
+                  message: "Đã thêm vào playlist",
+                  isSuccess: true,
+                );
               },
             ),
             ListTile(
@@ -301,7 +370,11 @@ class _HomeTabPageState extends State<HomeTabPage> {
               title: const Text('Tải xuống'),
               onTap: () {
                 Navigator.pop(context);
-                ToastHelper.show(context, message: "Đang tải xuống...", isSuccess: true);
+                ToastHelper.show(
+                  context,
+                  message: "Đang tải xuống...",
+                  isSuccess: true,
+                );
               },
             ),
             ListTile(
@@ -309,7 +382,11 @@ class _HomeTabPageState extends State<HomeTabPage> {
               title: const Text('Chia sẻ'),
               onTap: () {
                 Navigator.pop(context);
-                ToastHelper.show(context, message: "Đã sao chép link bài hát", isSuccess: true);
+                ToastHelper.show(
+                  context,
+                  message: "Đã sao chép link bài hát",
+                  isSuccess: true,
+                );
               },
             ),
             const Divider(),
@@ -317,7 +394,11 @@ class _HomeTabPageState extends State<HomeTabPage> {
               onPressed: () => Navigator.pop(context),
               child: const Text(
                 'Đóng',
-                style: TextStyle(fontSize: 18, fontFamily: "SF Pro", fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 18,
+                  fontFamily: "SF Pro",
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ],
@@ -368,12 +449,13 @@ class _SongItemSection extends StatelessWidget {
                     width: 56,
                     height: 56,
                     fit: BoxFit.cover,
-                    imageErrorBuilder: (context, error, stackTrace) => Image.asset(
-                      'assets/musical_note.jpg',
-                      width: 56,
-                      height: 56,
-                      fit: BoxFit.cover,
-                    ),
+                    imageErrorBuilder: (context, error, stackTrace) =>
+                        Image.asset(
+                          'assets/musical_note.jpg',
+                          width: 56,
+                          height: 56,
+                          fit: BoxFit.cover,
+                        ),
                   ),
                 ),
                 Consumer<PlayerProvider>(
@@ -406,7 +488,11 @@ class _SongItemSection extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     song.artist,
-                    style: const TextStyle(fontSize: 14, fontFamily: "SF Pro", color: Colors.black),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontFamily: "SF Pro",
+                      color: Colors.black,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),

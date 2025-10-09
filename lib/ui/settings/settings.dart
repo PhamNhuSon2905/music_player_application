@@ -1,24 +1,49 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:music_player_application/ui/settings/theme_notifier.dart';
+import 'about_app_page.dart';
+import 'privacy_policy_page.dart'; // ✅ import file vừa tạo
 
 class SettingsTab extends StatelessWidget {
   const SettingsTab({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final themeNotifier = context.watch<ThemeNotifier>();
-    final isDark = themeNotifier.themeMode == ThemeMode.dark;
-
     return Scaffold(
-      appBar: AppBar(title: const Text('Cài đặt')),
+      appBar: AppBar(
+        title: const Text(
+          'Cài đặt',
+          style: TextStyle(
+            fontFamily: "SF Pro",
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+          ),
+        ),
+        backgroundColor: Colors.white,
+        elevation: 0,
+      ),
       body: ListView(
         children: [
-          SwitchListTile(
-            title: const Text('Chế độ tối'),
-            value: isDark,
-            onChanged: (_) => themeNotifier.toggleTheme(),
-            secondary: const Icon(Icons.brightness_6),
+          ListTile(
+            leading: const Icon(Icons.info_outline, color: Colors.deepPurple),
+            title: const Text('Giới thiệu ứng dụng'),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AboutAppPage()),
+              );
+            },
+          ),
+          ListTile(
+            leading:
+            const Icon(Icons.privacy_tip_outlined, color: Colors.deepPurple),
+            title: const Text('Chính sách bảo mật'),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const PrivacyPolicyPage(),
+                ),
+              );
+            },
           ),
         ],
       ),
