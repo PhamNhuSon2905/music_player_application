@@ -108,7 +108,7 @@ class _FavoriteSongsPageState extends State<FavoriteSongsPage> {
               },
             ),
 
-            /// ✅ MiniPlayer luôn nằm trên bottom nav
+            // miniplayer nằm trên appbar dưới
             Align(
               alignment: Alignment.bottomCenter,
               child: Consumer<PlayerProvider>(
