@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'about_app_page.dart';
-import 'privacy_policy_page.dart'; // ✅ import file vừa tạo
+import 'privacy_policy_page.dart';
 
 class SettingsTab extends StatelessWidget {
   const SettingsTab({super.key});
