@@ -4,6 +4,7 @@ import 'package:music_player_application/data/model/playlist.dart';
 import 'package:music_player_application/data/repository/genre_repository.dart';
 import 'package:music_player_application/data/repository/playlist_repository.dart';
 import 'package:music_player_application/service/token_storage.dart';
+import 'package:music_player_application/ui/offline/downloaded_songs_page.dart';
 import 'package:music_player_application/utils/toast_helper.dart';
 import '../../playlist_song/playlist_detail_page.dart';
 import 'favorite_songs_page.dart';
@@ -172,6 +173,45 @@ class _DiscoveryTabState extends State<DiscoveryTab> {
                 ),
               ),
             ),
+
+
+
+
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 16, 16, 0),
+              child: Text(
+                'Danh sách bài hát tải xuống',
+                style: TextStyle(
+                  fontFamily: 'SF Pro',
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const DownloadedSongsPage(),
+                    ),
+                  );
+                },
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Image.asset(
+                    'assets/banner/banner_download.jpg',
+                    height: 120,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+            ),
+
+
 
             const Padding(
               padding: EdgeInsets.fromLTRB(16, 16, 16, 0),

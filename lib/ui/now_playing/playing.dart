@@ -78,6 +78,9 @@ class _NowPlayingState extends State<NowPlaying>
         size: const Size(200, 200),
         maximumColorCount: 10,
       );
+
+      if (!mounted) return;
+
       if (generator.dominantColor != null) {
         setState(() => _dominantColor = generator.dominantColor!.color);
       }
@@ -89,15 +92,17 @@ class _NowPlayingState extends State<NowPlaying>
   Future<void> _initFavoriteState(Song song) async {
     _userId = await TokenStorage.getUserId();
     _favoriteSongRepository = FavoriteSongRepository(context);
+
     final favorites =
     await _favoriteSongRepository.fetchFavoriteSongsByUserId(_userId);
-    if (mounted) {
-      setState(() {
-        _isFavorite = favorites.any(
-              (fav) => fav.songId.toString() == song.id.toString(),
-        );
-      });
-    }
+
+    if (!mounted) return;
+
+    setState(() {
+      _isFavorite = favorites.any(
+            (fav) => fav.songId.toString() == song.id.toString(),
+      );
+    });
   }
 
   Future<void> _checkIfDownloaded(Song song) async {
@@ -105,6 +110,7 @@ class _NowPlayingState extends State<NowPlaying>
       final prefs = await SharedPreferences.getInstance();
       final folderPath = prefs.getString("download_music_app");
       if (folderPath == null) {
+        if (!mounted) return;
         setState(() => _isDownloaded = false);
         return;
       }
@@ -116,7 +122,10 @@ class _NowPlayingState extends State<NowPlaying>
       final filePath = "$folderPath/$fileName";
 
       final fileExists = await File(filePath).exists();
-      if (mounted) setState(() => _isDownloaded = fileExists);
+
+      if (!mounted) return;
+
+      setState(() => _isDownloaded = fileExists);
     } catch (e) {
       debugPrint("Lỗi kiểm tra file tải: $e");
     }
@@ -125,17 +134,18 @@ class _NowPlayingState extends State<NowPlaying>
   Future<void> _toggleFavorite(Song song) async {
     if (_isFavorite) {
       await _favoriteSongRepository.removeFavorite(_userId, song.id);
-      if (mounted) setState(() => _isFavorite = false);
+      if (!mounted) return;
+      setState(() => _isFavorite = false);
       ToastHelper.show(context,
           message: 'Đã xóa bài hát khỏi Yêu thích', isSuccess: false);
     } else {
       await _favoriteSongRepository.addFavorite(_userId, song.id);
-      if (mounted) setState(() => _isFavorite = true);
+      if (!mounted) return;
+      setState(() => _isFavorite = true);
       ToastHelper.show(context,
           message: 'Đã thêm bài hát vào Yêu thích', isSuccess: true);
     }
   }
-
 
   Future<void> _handleDownload(Song song) async {
     if (_isDownloaded) {
@@ -144,6 +154,7 @@ class _NowPlayingState extends State<NowPlaying>
       return;
     }
 
+    if (!mounted) return;
     setState(() => _isDownloading = true);
 
     final safeTitle = song.title.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
@@ -158,7 +169,8 @@ class _NowPlayingState extends State<NowPlaying>
 
     await _checkIfDownloaded(song);
 
-    if (mounted) setState(() => _isDownloading = false);
+    if (!mounted) return;
+    setState(() => _isDownloading = false);
   }
 
   @override
@@ -263,7 +275,6 @@ class _NowPlayingState extends State<NowPlaying>
   Widget _buildAlbumInfo(Song song, double screenWidth, double delta) {
     return Column(
       children: [
-        // Tên album
         Padding(
           padding: const EdgeInsets.only(bottom: 16),
           child: Text(
@@ -276,8 +287,6 @@ class _NowPlayingState extends State<NowPlaying>
             ),
           ),
         ),
-
-
         AnimatedSwitcher(
           duration: const Duration(milliseconds: 400),
           child: RotationTransition(
@@ -297,10 +306,9 @@ class _NowPlayingState extends State<NowPlaying>
                     : CachedNetworkImage(
                   imageUrl: song.image,
                   fit: BoxFit.cover,
-                  errorWidget: (_, __, ___) => Image.asset(
-                    'assets/musical_note.jpg',
-                    fit: BoxFit.cover,
-                  ),
+                  errorWidget: (_, __, ___) =>
+                      Image.asset('assets/musical_note.jpg',
+                          fit: BoxFit.cover),
                 ),
               ),
             ),
@@ -529,8 +537,8 @@ class _NowPlayingState extends State<NowPlaying>
                   ? const SizedBox(
                 width: 20,
                 height: 20,
-                child:
-                CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                child: CircularProgressIndicator(
+                    color: Colors.white, strokeWidth: 2),
               )
                   : IconButton(
                 onPressed: () => _handleDownload(song),
