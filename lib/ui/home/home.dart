@@ -9,6 +9,7 @@ import 'package:music_player_application/service/user_service.dart';
 import 'package:music_player_application/utils/toast_helper.dart';
 import 'package:provider/provider.dart';
 import '../../data/model/song.dart';
+import '../../service/dowload_service.dart';
 import '../../widgets/playing_indicator.dart';
 import '../now_playing/audio_helper.dart';
 import '../providers/player_provider.dart';
@@ -366,17 +367,27 @@ class _HomeTabPageState extends State<HomeTabPage> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.download_rounded),
-              title: const Text('Tải xuống'),
-              onTap: () {
+              leading: const Icon(Icons.arrow_circle_down_rounded),
+              title: const Text('Tải xuống bài hát'),
+              onTap: () async {
                 Navigator.pop(context);
-                ToastHelper.show(
-                  context,
-                  message: "Đang tải xuống...",
-                  isSuccess: true,
-                );
+                Future.delayed(const Duration(milliseconds: 200), () async {
+                  final safeTitle = song.title.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
+                  final safeArtist = song.artist.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
+                  final safeAlbum = song.album.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
+                  final fileName = "${safeTitle}_${safeArtist}_${safeAlbum}.mp3";
+
+                  await DownloadService.downloadSong(
+                    url: song.source,
+                    fileName: fileName,
+                  );
+                });
               },
             ),
+
+
+
+
             ListTile(
               leading: const Icon(Icons.share_rounded),
               title: const Text('Chia sẻ'),
