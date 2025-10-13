@@ -4,6 +4,7 @@ import 'package:music_player_application/ui/providers/player_provider.dart';
 import 'package:music_player_application/ui/splash_screen/splash_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
+import 'package:music_player_application/utils/toast_helper.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 
 Future<void> clearSession() async {
@@ -38,6 +39,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey,
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         brightness: Brightness.light,

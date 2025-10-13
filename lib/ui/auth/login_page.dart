@@ -123,7 +123,7 @@ class _LoginPageState extends State<LoginPage> {
                   Image.asset('assets/logoZ.png', height: 80),
                   const SizedBox(height: 16),
                   const Text(
-                    "Zing MP3",
+                    "Music App",
                     style: TextStyle(
                       color: Colors.black87,
                       fontSize: 32,
