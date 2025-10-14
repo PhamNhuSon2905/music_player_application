@@ -119,16 +119,16 @@ class _MusicHomePageState extends State<MusicHomePage> {
                         shape: BoxShape.circle,
                         gradient: _currentIndex == 2
                             ? LinearGradient(
-                          colors: [
-                            Colors.purple.shade200,
-                            Colors.purple.shade50,
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        )
+                                colors: [
+                                  Colors.purple.shade200,
+                                  Colors.purple.shade50,
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              )
                             : const LinearGradient(
-                          colors: [Colors.grey, Colors.grey],
-                        ),
+                                colors: [Colors.grey, Colors.grey],
+                              ),
                       ),
                       child: CircleAvatar(
                         radius: 11,
@@ -372,10 +372,20 @@ class _HomeTabPageState extends State<HomeTabPage> {
               onTap: () async {
                 Navigator.pop(context);
                 Future.delayed(const Duration(milliseconds: 200), () async {
-                  final safeTitle = song.title.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
-                  final safeArtist = song.artist.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
-                  final safeAlbum = song.album.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
-                  final fileName = "${safeTitle}_${safeArtist}_${safeAlbum}.mp3";
+                  final safeTitle = song.title.replaceAll(
+                    RegExp(r'[\\/:*?"<>|]'),
+                    '_',
+                  );
+                  final safeArtist = song.artist.replaceAll(
+                    RegExp(r'[\\/:*?"<>|]'),
+                    '_',
+                  );
+                  final safeAlbum = song.album.replaceAll(
+                    RegExp(r'[\\/:*?"<>|]'),
+                    '_',
+                  );
+                  final fileName =
+                      "${safeTitle}_${safeArtist}_${safeAlbum}.mp3";
 
                   await DownloadService.downloadSong(
                     url: song.source,
@@ -384,9 +394,6 @@ class _HomeTabPageState extends State<HomeTabPage> {
                 });
               },
             ),
-
-
-
 
             ListTile(
               leading: const Icon(Icons.share_rounded),

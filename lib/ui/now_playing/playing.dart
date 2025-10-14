@@ -1,13 +1,13 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:marquee/marquee.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:audio_video_progress_bar/audio_video_progress_bar.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:palette_generator/palette_generator.dart';
 import 'package:blur/blur.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/model/song.dart';
 import '../../data/repository/favorite_song_repository.dart';
 import '../../service/token_storage.dart';
@@ -42,8 +42,10 @@ class _NowPlayingState extends State<NowPlaying>
     super.initState();
     final player = context.read<PlayerProvider>();
 
-    _imageAnimController =
-        AnimationController(vsync: this, duration: const Duration(seconds: 20));
+    _imageAnimController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 20),
+    );
 
     _manager = AudioPlayerManager(
       provider: player,
@@ -73,11 +75,11 @@ class _NowPlayingState extends State<NowPlaying>
     if (imageUrl.isEmpty || !imageUrl.startsWith("http")) return;
     try {
       final PaletteGenerator generator =
-      await PaletteGenerator.fromImageProvider(
-        CachedNetworkImageProvider(imageUrl),
-        size: const Size(200, 200),
-        maximumColorCount: 10,
-      );
+          await PaletteGenerator.fromImageProvider(
+            CachedNetworkImageProvider(imageUrl),
+            size: const Size(200, 200),
+            maximumColorCount: 10,
+          );
 
       if (!mounted) return;
 
@@ -93,24 +95,24 @@ class _NowPlayingState extends State<NowPlaying>
     _userId = await TokenStorage.getUserId();
     _favoriteSongRepository = FavoriteSongRepository(context);
 
-    final favorites =
-    await _favoriteSongRepository.fetchFavoriteSongsByUserId(_userId);
+    final favorites = await _favoriteSongRepository.fetchFavoriteSongsByUserId(
+      _userId,
+    );
 
     if (!mounted) return;
 
     setState(() {
       _isFavorite = favorites.any(
-            (fav) => fav.songId.toString() == song.id.toString(),
+        (fav) => fav.songId.toString() == song.id.toString(),
       );
     });
   }
 
   Future<void> _checkIfDownloaded(Song song) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final folderPath = prefs.getString("download_music_app");
-      if (folderPath == null) {
-        if (!mounted) return;
+      final dir = await getApplicationDocumentsDirectory();
+      final folder = Directory('${dir.path}/App_Music');
+      if (!folder.existsSync()) {
         setState(() => _isDownloaded = false);
         return;
       }
@@ -119,10 +121,8 @@ class _NowPlayingState extends State<NowPlaying>
       final safeArtist = song.artist.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
       final safeAlbum = song.album.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
       final fileName = "${safeTitle}_${safeArtist}_${safeAlbum}.mp3";
-      final filePath = "$folderPath/$fileName";
-
+      final filePath = "${folder.path}/$fileName";
       final fileExists = await File(filePath).exists();
-
       if (!mounted) return;
 
       setState(() => _isDownloaded = fileExists);
@@ -136,21 +136,30 @@ class _NowPlayingState extends State<NowPlaying>
       await _favoriteSongRepository.removeFavorite(_userId, song.id);
       if (!mounted) return;
       setState(() => _isFavorite = false);
-      ToastHelper.show(context,
-          message: 'Đã xóa bài hát khỏi Yêu thích', isSuccess: false);
+      ToastHelper.show(
+        context,
+        message: 'Đã xóa bài hát khỏi Yêu thích',
+        isSuccess: false,
+      );
     } else {
       await _favoriteSongRepository.addFavorite(_userId, song.id);
       if (!mounted) return;
       setState(() => _isFavorite = true);
-      ToastHelper.show(context,
-          message: 'Đã thêm bài hát vào Yêu thích', isSuccess: true);
+      ToastHelper.show(
+        context,
+        message: 'Đã thêm bài hát vào Yêu thích',
+        isSuccess: true,
+      );
     }
   }
 
   Future<void> _handleDownload(Song song) async {
     if (_isDownloaded) {
-      ToastHelper.show(context,
-          message: "Bài hát đã có trong thiết bị!", isSuccess: true);
+      ToastHelper.show(
+        context,
+        message: "Bài hát đã có trong thiết bị!",
+        isSuccess: true,
+      );
       return;
     }
 
@@ -162,10 +171,7 @@ class _NowPlayingState extends State<NowPlaying>
     final safeAlbum = song.album.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
     final fileName = "${safeTitle}_${safeArtist}_${safeAlbum}.mp3";
 
-    await DownloadService.downloadSong(
-      url: song.source,
-      fileName: fileName,
-    );
+    await DownloadService.downloadSong(url: song.source, fileName: fileName);
 
     await _checkIfDownloaded(song);
 
@@ -178,9 +184,7 @@ class _NowPlayingState extends State<NowPlaying>
     final player = context.watch<PlayerProvider>();
     final Song? song = player.currentSong;
     if (song == null) {
-      return const Scaffold(
-        body: Center(child: Text("Chưa chọn bài hát nào")),
-      );
+      return const Scaffold(body: Center(child: Text("Chưa chọn bài hát nào")));
     }
 
     final screenWidth = MediaQuery.of(context).size.width;
@@ -195,12 +199,12 @@ class _NowPlayingState extends State<NowPlaying>
           (song.image.isEmpty || !song.image.startsWith("http"))
               ? Image.asset('assets/musical_note.jpg', fit: BoxFit.cover)
               : CachedNetworkImage(
-            imageUrl: song.image,
-            fit: BoxFit.cover,
-            placeholder: (_, __) => Container(color: Colors.black),
-            errorWidget: (_, __, ___) =>
-                Image.asset('assets/musical_note.jpg', fit: BoxFit.cover),
-          ),
+                  imageUrl: song.image,
+                  fit: BoxFit.cover,
+                  placeholder: (_, __) => Container(color: Colors.black),
+                  errorWidget: (_, __, ___) =>
+                      Image.asset('assets/musical_note.jpg', fit: BoxFit.cover),
+                ),
           Blur(
             blur: 20,
             blurColor: Colors.black.withValues(alpha: 0.05),
@@ -304,12 +308,13 @@ class _NowPlayingState extends State<NowPlaying>
                 child: (song.image.isEmpty || !song.image.startsWith("http"))
                     ? Image.asset('assets/musical_note.jpg', fit: BoxFit.cover)
                     : CachedNetworkImage(
-                  imageUrl: song.image,
-                  fit: BoxFit.cover,
-                  errorWidget: (_, __, ___) =>
-                      Image.asset('assets/musical_note.jpg',
-                          fit: BoxFit.cover),
-                ),
+                        imageUrl: song.image,
+                        fit: BoxFit.cover,
+                        errorWidget: (_, __, ___) => Image.asset(
+                          'assets/musical_note.jpg',
+                          fit: BoxFit.cover,
+                        ),
+                      ),
               ),
             ),
           ),
@@ -335,32 +340,34 @@ class _NowPlayingState extends State<NowPlaying>
                   height: 24,
                   child: song.title.length > 20
                       ? Marquee(
-                    text: song.title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                    scrollAxis: Axis.horizontal,
-                    blankSpace: 50,
-                    velocity: 30,
-                    pauseAfterRound: Duration(seconds: 1),
-                  )
+                          text: song.title,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                          scrollAxis: Axis.horizontal,
+                          blankSpace: 50,
+                          velocity: 30,
+                          pauseAfterRound: Duration(seconds: 1),
+                        )
                       : Text(
-                    song.title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
-                  ),
+                          song.title,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                        ),
                 ),
-                Text(song.artist,
-                    style: const TextStyle(color: Colors.white70),
-                    textAlign: TextAlign.center),
+                Text(
+                  song.artist,
+                  style: const TextStyle(color: Colors.white70),
+                  textAlign: TextAlign.center,
+                ),
               ],
             ),
           ),
@@ -387,7 +394,8 @@ class _NowPlayingState extends State<NowPlaying>
       child: StreamBuilder<DurationState>(
         stream: player.durationState,
         builder: (context, snapshot) {
-          final state = snapshot.data ??
+          final state =
+              snapshot.data ??
               DurationState(
                 progress: player.player.position,
                 buffered: player.player.bufferedPosition,
@@ -404,8 +412,10 @@ class _NowPlayingState extends State<NowPlaying>
             progressBarColor: Colors.white,
             bufferedBarColor: Colors.white54,
             thumbColor: Colors.white,
-            timeLabelTextStyle:
-            const TextStyle(color: Colors.grey, fontSize: 12),
+            timeLabelTextStyle: const TextStyle(
+              color: Colors.grey,
+              fontSize: 12,
+            ),
           );
         },
       ),
@@ -446,8 +456,8 @@ class _NowPlayingState extends State<NowPlaying>
                       : Icons.play_circle_outline_rounded,
                   size: 65,
                 ),
-                onPressed:
-                    () => player.isPlaying ? player.pause() : player.play(),
+                onPressed: () =>
+                    player.isPlaying ? player.pause() : player.play(),
                 color: Colors.white,
               ),
             ),
@@ -501,21 +511,26 @@ class _NowPlayingState extends State<NowPlaying>
         children: [
           const Expanded(
             child: Center(
-              child: Icon(Icons.color_lens_outlined,
-                  color: Colors.grey, size: 24),
+              child: Icon(
+                Icons.color_lens_outlined,
+                color: Colors.grey,
+                size: 24,
+              ),
             ),
           ),
           const Expanded(
             child: Center(
-              child: Icon(Icons.playlist_add_outlined,
-                  color: Colors.grey, size: 24),
+              child: Icon(
+                Icons.playlist_add_outlined,
+                color: Colors.grey,
+                size: 24,
+              ),
             ),
           ),
           Expanded(
             child: Center(
               child: Container(
-                padding:
-                const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(6),
@@ -535,27 +550,30 @@ class _NowPlayingState extends State<NowPlaying>
             child: Center(
               child: _isDownloading
                   ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                    color: Colors.white, strokeWidth: 2),
-              )
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
                   : IconButton(
-                onPressed: () => _handleDownload(song),
-                icon: Icon(
-                  Icons.arrow_circle_down_rounded,
-                  color: _isDownloaded
-                      ? Colors.deepPurple
-                      : Colors.grey,
-                  size: 26,
-                ),
-              ),
+                      onPressed: () => _handleDownload(song),
+                      icon: Icon(
+                        Icons.arrow_circle_down_rounded,
+                        color: _isDownloaded ? Colors.deepPurple : Colors.grey,
+                        size: 26,
+                      ),
+                    ),
             ),
           ),
           const Expanded(
             child: Center(
-              child: Icon(Icons.queue_music_rounded,
-                  color: Colors.grey, size: 24),
+              child: Icon(
+                Icons.queue_music_rounded,
+                color: Colors.grey,
+                size: 24,
+              ),
             ),
           ),
         ],
