@@ -1,76 +1,75 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:dio/dio.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:path_provider/path_provider.dart';
 import '../utils/toast_helper.dart';
 
 class DownloadService {
   static final Dio _dio = Dio();
 
+  // tải bài hát offline
   static Future<void> downloadSong({
     required String url,
     required String fileName,
+
   }) async {
     try {
-      if (Platform.isAndroid) {
-        final status = await Permission.manageExternalStorage.request();
-        if (status.isDenied) {
-          ToastHelper.showGlobal(
-            message: "Vui lòng cấp quyền truy cập bộ nhớ để tải bài hát!",
-            isSuccess: false,
-          );
-          return;
-        }
-        if (status.isPermanentlyDenied) {
-          ToastHelper.showGlobal(
-            message: "Hãy bật quyền truy cập bộ nhớ trong Cài đặt để tải bài hát!",
-            isSuccess: false,
-          );
-          openAppSettings();
-          return;
-        }
+      final dir = await getApplicationDocumentsDirectory();
+      final folder = Directory('${dir.path}/App_Music');
+
+      if (!folder.existsSync()) {
+        folder.createSync(recursive: true);
       }
 
-      final prefs = await SharedPreferences.getInstance();
-      String? folderPath = prefs.getString("download_music_app");
-
-      if (folderPath == null) {
-        final result = await FilePicker.platform.getDirectoryPath();
-        if (result == null) return;
-        folderPath = result;
-        await prefs.setString("download_music_app", folderPath);
-      }
-
-      final savePath = "$folderPath/$fileName";
+      final safeName = fileName.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
+      final savePath = '${folder.path}/$safeName';
 
       if (File(savePath).existsSync()) {
         ToastHelper.showGlobal(
-          message: "Bài hát đã có trong thiết bị!",
+          message: "Bài hát đã tồn tại trong hệ thống!",
           isSuccess: true,
         );
         return;
       }
 
-      ToastHelper.showGlobal(
-        message: "Đang tải xuống bài hát...",
-        isSuccess: true,
+      ToastHelper.showGlobal(message: "Đang tải xuống bài hát...", isSuccess: true);
+
+      final response = await _dio.get(
+        url,
+        options: Options(responseType: ResponseType.bytes),
       );
 
-      await _dio.download(url, savePath, onReceiveProgress: (r, t) {
-        if (t != -1) {
-        }
-      });
+      final bytes = Uint8List.fromList(response.data);
+      await File(savePath).writeAsBytes(bytes);
 
       ToastHelper.showGlobal(
-        message: "Đã tải xuống bài hát: $fileName!",
+        message: "Đã tải xuống bài hát: $fileName",
         isSuccess: true,
       );
-    } catch (e) {
+    } catch (e, st) {
+      print("Lỗi khi tải bài hát: $e");
+      print(st);
       ToastHelper.showGlobal(
-        message: "Tải xuống bài hát thất bại: $e",
+        message: "Tải xuống thất bại: $e",
         isSuccess: false,
       );
     }
+  }
+
+  // lấy các bài hát đã tải xuống
+  static Future<List<FileSystemEntity>> getDownloadedSongs() async {
+    final dir = await getApplicationDocumentsDirectory();
+    final folder = Directory('${dir.path}/App_Music');
+    if (!folder.existsSync()) return [];
+    return folder
+        .listSync()
+        .where((f) => f.path.toLowerCase().endsWith('.mp3'))
+        .toList();
+  }
+
+  // lấy đường dẫn thư mục đã tải xuống
+  static Future<String> getDownloadFolderPath() async {
+    final dir = await getApplicationDocumentsDirectory();
+    return '${dir.path}/App_Music';
   }
 }

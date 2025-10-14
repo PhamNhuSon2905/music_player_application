@@ -1,9 +1,7 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/model/song.dart';
-import '../../utils/toast_helper.dart';
+import '../../service/dowload_service.dart';
 import '../now_playing/audio_helper.dart';
 import '../now_playing/playing_scope.dart';
 import '../mini_player/mini_player.dart';
@@ -29,35 +27,7 @@ class _DownloadedSongsPageState extends State<DownloadedSongsPage> {
 
   Future<void> _loadDownloadedSongs() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final folderPath = prefs.getString("download_music_app");
-
-      if (folderPath == null) {
-        setState(() {
-          isLoading = false;
-          downloadedSongs = [];
-        });
-        ToastHelper.show(context,
-            message: "Chưa chọn thư mục tải nhạc!", isSuccess: false);
-        return;
-      }
-
-      final dir = Directory(folderPath);
-      if (!dir.existsSync()) {
-        setState(() {
-          isLoading = false;
-          downloadedSongs = [];
-        });
-        ToastHelper.show(context,
-            message: "Thư mục không tồn tại!", isSuccess: false);
-        return;
-      }
-
-      final files = dir
-          .listSync()
-          .where((f) =>
-      f is File && f.path.toLowerCase().endsWith('.mp3'))
-          .toList();
+      final files = await DownloadService.getDownloadedSongs();
 
       final List<Song> songs = files.map((file) {
         final name = file.uri.pathSegments.last;
@@ -73,7 +43,7 @@ class _DownloadedSongsPageState extends State<DownloadedSongsPage> {
           artist: artist,
           album: album,
           image: '',
-          source: file.path, // đường dẫn local
+          source: file.path,
           duration: 0,
           createdAt: DateTime.now(),
         );
@@ -84,7 +54,7 @@ class _DownloadedSongsPageState extends State<DownloadedSongsPage> {
         isLoading = false;
       });
     } catch (e) {
-      debugPrint('Lỗi khi quét bài hát offline: $e');
+      debugPrint('Lỗi khi tải danh sách offline: $e');
       setState(() {
         isLoading = false;
         downloadedSongs = [];
@@ -120,12 +90,11 @@ class _DownloadedSongsPageState extends State<DownloadedSongsPage> {
         ),
         body: isLoading
             ? const Center(
-            child:
-            CircularProgressIndicator(color: Colors.deepPurple))
+            child: CircularProgressIndicator(color: Colors.deepPurple))
             : downloadedSongs.isEmpty
             ? const Center(
           child: Text(
-            'Không tìm thấy bài hát nào trong thiết bị.',
+            'Không tìm thấy bài hát nào trong thiết bị!',
             style: TextStyle(
               fontFamily: "SF Pro",
               fontSize: 15,
@@ -192,7 +161,7 @@ class _SongTile extends StatelessWidget {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: Image.asset(
-                    'assets/musical_note.jpg', // ảnh mặc định
+                    'assets/musical_note.jpg',
                     width: 56,
                     height: 56,
                     fit: BoxFit.cover,
